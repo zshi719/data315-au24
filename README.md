@@ -108,7 +108,7 @@ Tuesday - Data storytelling (begin Assignment 3)
 
 - read: [Narrative Visualization: Telling Stories with Data](http://vis.stanford.edu/files/2010-Narrative-InfoVis.pdf), [Communicating with Interactive Articles](https://distill.pub/2020/communicating-with-interactive-articles/)
 
-Thursday - Svelte Scrolly + Stores demo
+Thursday - Svelte Scrolly demo
 
 ### Week 7: Rhetorical visualization
 
