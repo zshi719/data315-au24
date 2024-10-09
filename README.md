@@ -86,8 +86,9 @@ We have no class this week because the course staff are traveling for a conferen
 
 ### Week 4: Cartography
 
-Tuesday - Cartography (begin Assignment 2)
+Tuesday - Cartography 
 
+- begin Assignment 2
 - read: [1 Cartography](https://icaci.org/files/documents/wom/01_IMY_WoM_en.pdf) (book chapter)
 
 Thursday - Svelte + D3 demo
@@ -104,8 +105,9 @@ Thursday - Animated transitions activity
 
 ### Week 6: Narrative visualization
 
-Tuesday - Data storytelling (begin Assignment 3)
+Tuesday - Data storytelling 
 
+- begin Assignment 3
 - read: [Narrative Visualization: Telling Stories with Data](http://vis.stanford.edu/files/2010-Narrative-InfoVis.pdf), [Communicating with Interactive Articles](https://distill.pub/2020/communicating-with-interactive-articles/)
 
 Thursday - Svelte Scrolly demo
