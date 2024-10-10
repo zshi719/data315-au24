@@ -162,7 +162,7 @@ glimpse(history)
 ### Current and Historical S&P 500 Companies
 Price history of the current S&P 500 companies
 
-```{r, echo=FALSE}
+```{r, eval=FALSE}
 # function to fetch the stock price history given the ticker
 pull_all_data <- . %>%
   tq_get(from = "2023-01-01") %>%
@@ -272,6 +272,13 @@ The period could be a day, a week, or a month.
 Compared to absolute price changes, percentage returns make it easier to compare both with itself, the relative change in value, and across companies.
 
 ```{r}
+# if not exist price_data, returns, or returns_wide, import them
+if (!exists("price_data")) {
+  price_data <- readRDS("data/sp500_price_data.RData")
+}
+```
+
+```{r, eval=FALSE}
 # Calculating the daily returns for each stock
 returns_all <- price_data %>%
   arrange(symbol, date) %>%
@@ -281,22 +288,23 @@ returns_all <- price_data %>%
   ungroup()
 
 
-returns <- returns_all %>% select(c(1, 8:16))
-#saveRDS(returns, "data/returns.RData")
-#head(returns)
+returns <- returns_all[,c(1,8:16)]
+saveRDS(returns_all, "/Users/victoriashi/RProjects/data315-au24/coursework/assignment1/data/returns_all.RData")
 
+saveRDS(returns, "data/returns.RData")
 ```
 
 
 This is a more intuitive and concise representation of the previous return data.
 
 
-```{r}
+
+```{r, eval=FALSE}
 # a more intuitive format:  symbol-return on each date
 returns_wide <- returns %>%
   #  symbol in 1st column, follow by the stock return on each day in all other columns of every stock
   pivot_wider(id_cols = date, names_from = symbol, values_from = return)
-head(returns_wide)
+#head(returns_wide)
 
 # saveRDS(returns_wide, "data/returns_wide.RData")
 ```
@@ -306,6 +314,20 @@ head(returns_wide)
 
 ## Uni-variate Analysis
 
+```{r}
+
+if (!exists("returns")) {
+  returns <- readRDS("data/returns.RData")
+}
+if (!exists("returns_wide")) {
+  returns_wide <- readRDS("data/returns_wide.RData")
+}
+
+if (!exists("returns_all")) {
+  price_data <- readRDS("data/returns_all.RData")
+}
+
+```
 ```{r}
 # Count the number of companies in each sector (gics_sector)
 sectors <- price_data %>%
@@ -455,7 +477,8 @@ To identify patterns in stock returns across companies, I applied **k-means clus
 
 ```{r}
 # one - abs(correlation) to get dissimilarity
-corr_matrix <- cor(ret_matrix, use = "complete.obs", abs = TRUE)
+ret_matrix <- as.matrix(returns_wide[, -1]) %>% na.omit()
+corr_matrix <- cor(as.matrix(returns_wide[, -1]), use = "complete.obs")
 dissimilarity_matrix <- as.dist(1 - corr_matrix)
 
 
@@ -470,7 +493,8 @@ hc %>%
         plot(main = "Hiearchical Clustering")
 
 # umap for 2D visualization
-umap_results <- umap::umap(dissimilarity_matrix, n_neighbors = 15, min_dist = 0.1, metric = "euclidean")
+
+umap_results <- umap::umap(ret_matrixret_matrix, n_neighbors = 5, min_dist = 0.1, metric = "euclidean")
 # visualize the results
 umap_results %>%
   as.data.frame() %>%
@@ -478,6 +502,7 @@ umap_results %>%
   geom_point() +
   labs(title = "UMAP Visualization of Stock Returns", x = "UMAP 1", y = "UMAP 2") +
   theme_minimal()
+
 ```
 
 
@@ -507,14 +532,15 @@ fviz_nbclust(dissimilarity_matrix, k.max = 8, FUNcluster = hcut , method = "silh
 
 
 ```{r}
-kmeans_obj <- kmeans(returns_scaled, centers = 5, nstart = 20)
+#   k-means clustering with 5 centers
+k5 <- kmeans(ret_matrix, centers = 5, nstart = 20)
 
 # Perform PCA for visualization
-pca_results <- prcomp(returns_scaled, scale. = TRUE)
+pca_results <- prcomp(ret_matrix, scale. = TRUE)
 pca_data <- as.data.frame(pca_results$x)
 
 # Add cluster information
-pca_data$cluster <- as.factor(kmeans_obj$cluster)
+pca_data$cluster <- as.factor(k5$cluster)
 
 # Plot PCA results with clusters
 ggplot(pca_data, aes(x = PC1, y = PC2, color = cluster)) +
@@ -522,22 +548,12 @@ ggplot(pca_data, aes(x = PC1, y = PC2, color = cluster)) +
   labs(title = "K-means Clustering (PCA Projection)", x = "PC1", y = "PC2") +
   theme_minimal()
 
+fviz_cluster(k5, data = ret_matrix, geom = "point", stand = FALSE, ellipse.type = "convex", ellipse = TRUE, pointsize = 1.5) +
+        labs(title = "K-means Clustering of Stock Returns", x = "PC1", y = "PC2") +
+        theme_minimal()
+# inspect cluster centers and find insights
+k5$centers
 
-
-kmeans_obj <- kmeans(returns_scaled, centers = 6, nstart = 20)
-
-# Perform PCA for visualization
-pca_results <- prcomp(returns_scaled, scale. = TRUE)
-pca_data <- as.data.frame(pca_results$x)
-
-# Add cluster information
-pca_data$cluster <- as.factor(kmeans_obj$cluster)
-
-# Plot PCA results with clusters
-ggplot(pca_data, aes(x = PC1, y = PC2, color = cluster)) +
-  geom_point(size = 4) +
-  labs(title = "K-means Clustering (PCA Projection)", x = "PC1", y = "PC2") +
-  theme_minimal()
 
 ```
 
