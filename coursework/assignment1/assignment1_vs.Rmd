@@ -211,10 +211,9 @@ Boxplots for all companies across different metrics might compare the distributi
 
 
 ```{r}
-# Remove outliers by filtering prices within the 1st and 99th percentiles
 
 price_long <- price_data %>% select( c(,8:15)) %>%
-  pivot_longer(cols =  c("open", "close", "high", "low", "adjusted"), names_to = "price_type", values_to = "price")
+  pivot_longer(cols =  adjusted, names_to = "price_type", values_to = "price")
 
 # # log-transformed y-axis
 price_long %>% 
