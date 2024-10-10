@@ -7,15 +7,14 @@ output:
     toc: true
     theme: flatly
     highlight: tango
-    code_folding: hide
     df_print: paged
   pdf_document:
-    toc: true
+toc: true
 editor_options:
   chunk_output_type: inline
 ---
 
-```{r setup, include=FALSE,echo=FALSE,message=FALSE}
+```{r setup, warning = FALSE, include=FALSE,echo=FALSE,message=FALSE}
 library(tidyr)
 library(dplyr)
 
@@ -24,48 +23,33 @@ library(tidyverse)
 library(tidyquant)
 library(broom)
 library(umap)
-library(plotly) 
+library(plotly)
 library(dplyr)
 library(ggplot2)
-library(factoextra)
 library(cluster)
 library(psych)
 library(factoextra)
 conflicted::conflict_prefer("select", "dplyr")
-conflicted::conflict_prefer("filter", "dplyr") 
+conflicted::conflict_prefer("filter", "dplyr")
 library(quantmod)
 gradient <- viridis::mako(8)
 # start with lighter color
 gradient <- gradient[8:3]
 colors <- brewer.pal(8, "Pastel2")
 knitr::opts_chunk$set(
-    echo = TRUE,
-    message = FALSE,
-    warning = FALSE,
-    tidy = TRUE
-    )
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  tidy = TRUE
+)
 knitr::opts_chunk$set(
-    echo = TRUE,
-    message = FALSE,
-    warning = FALSE,
-    fig.align = "center"
-    )
-setwd("~/Downloads/data315-au24/coursework/assignment1")
-```
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center"
+)
+setwd("~/RProjects/data315-au24/coursework/assignment1")
 
-
-
-Which companies are similar to each other to help in identifying potential customers of a SAAS software solution (e.g. Salesforce CRM or equivalent) in various segments of the market. Want to more easily penetrate various market segments.
-
-You will be using stock prices in this analysis. You come up with a method to classify companies based on how their stocks trade using their daily stock returns (percentage movement from one day to the next). This analysis will help your organization determine which companies are related to each other (competitors and have similar attributes). 
-
-Analyze the stock prices using what you've learned in the unsupervised learning tools including K-Means and UMAP. 
-
-# Objectives
-
-
-
-```{r,include=FALSE}
 # install.packages("plotly")
 library(dplyr)
 library(purrr)
@@ -87,7 +71,8 @@ library(stats)
 library(janitor)
 conflicted::conflicts_prefer(dplyr::filter)
 conflicted::conflicts_prefer(dplyr::select)
-
+library(gridExtra)
+library(grid)
 theme_set(theme_light())
 library(RColorBrewer)
 palette(brewer.pal(6, "Pastel2"))
@@ -98,40 +83,37 @@ library(tidyverse)
 library(tidyquant)
 library(broom)
 library(umap)
-library(plotly) 
-
-```
-
-```{r, include=FALSE}
+library(plotly)
+library(dplyr)
 # Set the theme and palette
 library(ggplot2)
 library(RColorBrewer)
 
 theme_set(theme_light()) # Light theme
 palette(brewer.pal(6, "Pastel2")) # Pastel color palette
-
-```
-
-
-Set up: 
-For example, if we want to target a new product or technology to potential customers in different market segments, we have their purchase history, and now we want to identify similar companies. 
-
-In this scenario, stock prices are two fair indicators of a company's trading patterns and performance. Thus, we might classify companies based on their stock returns and, by analyzing the cluster properties, derive further insights. These could potentially help the stakeholders identify competitors and companies with similar attributes. 
-
-
-# 1. Data Preparation
-
-
-# Data Scrapiing, Cleaning, & Wrangling
-
-
-```{r,include=FALSE}
-# Loading the necessary libraries
 library(rvest)  # web scraping
 library(dplyr)
 library(janitor)  # cleaning names
 library(tidyquant)
 library(purrr)
+
+```
+
+
+Set up:
+For example, if we want to target a new product or technology to potential customers in different market segments, we have their purchase history, and now we want to identify similar companies.
+
+In this scenario, stock prices are two fair indicators of a company's trading patterns and performance. Thus, we might classify companies based on their stock returns and, by analyzing the cluster properties, derive further insights. These could potentially help the stakeholders identify competitors and companies with similar attributes.
+
+
+# 1. Data Preparation
+
+
+# Data Scraping, Cleaning, & Wrangling
+
+
+```{r,include=FALSE}
+# Loading the necessary libraries
 
 ```
 
@@ -147,47 +129,54 @@ This chunk scrapes the S&P 500 data from Wikipedia amd extracts two tables: the 
 url <- 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
 
 # read HTML page and extract tables.
-sp500 <- url %>% read_html() %>%
+sp500 <- url %>%
+  read_html() %>%
   html_table(fill = TRUE, trim = TRUE)
 
 # current S&P 500 companies
 current <- sp500[[1]] %>%
   janitor::clean_names() %>%
   as.data.frame() %>%
-  mutate(founded = as.numeric(founded), `date_added` = as.Date(`date_added`)) %>% na.omit()
+  mutate(founded = as.numeric(founded), `date_added` = as.Date(`date_added`)) %>%
+  na.omit()
 
 # Historical Changes
-history <- sp500[[2]] %>% .[-1, ] %>%
+history <- sp500[[2]] %>%
+  .[-1,] %>%
   janitor::clean_names() %>%
   as.data.frame() %>%
-  mutate(date =as.Date(date,format = "%B %d, %Y")) %>% 
-  rename(, 'added_symbol' = added, 'added_security' = added_2, 'removed_symbol' = removed, 'removed_security' = removed_2) %>% na.omit()
+  mutate(date = as.Date(date, format = "%B %d, %Y")) %>%
+  rename(, 'added_symbol' = added, 'added_security' = added_2, 'removed_symbol' = removed, 'removed_security' = removed_2) %>%
+  na.omit()
 ```
 
 
 ### Data Overview
-The dataset includes '26' columns of key financial metrics for '45' publicly traded companies listed in the S&P 500 index. Each record provides financial data of one company. 
+The dataset includes '26' columns of key financial metrics for '45' publicly traded companies listed in the S&P 500 index. Each record provides financial data of one company.
 
 ```{r}
 glimpse(current)
 glimpse(history)
 ```
 
-
+### Current and Historical S&P 500 Companies
 Price history of the current S&P 500 companies
 
 ```{r, echo=FALSE}
 # function to fetch the stock price history given the ticker
-pull_all_data <- . %>% tq_get(from = "2023-01-01") %>% as.data.frame()
+pull_all_data <- . %>%
+  tq_get(from = "2023-01-01") %>%
+  as.data.frame()
 
 
 sp500_price_data <- current %>%
   # consistency - since sources use different formats
   mutate(symbol = stringr::str_replace_all(string = symbol, pattern = '[.]', replacement = '-')) %>%
   # loop through each symbol to retrieve its price history
-  mutate(data = map(symbol, pull_all_data)) %>% na.omit()
+  mutate(data = map(symbol, pull_all_data)) %>%
+  na.omit()
 
-glimpse(sp500_price_data)
+#glimpse(sp500_price_data)
 ```
 
 
@@ -196,64 +185,83 @@ glimpse(sp500_price_data)
 # saveRDS(sp500_price_data,"data/sp500_price_data.RData")
 ```
 
-```{r}
-price_data <- readRDS("data/sp500_price_data.RData") %>% select(-symbol) %>% unnest_legacy() 
 
-head(price_data)
+```{r}
+price_data <- readRDS("data/sp500_price_data.RData") %>%
+    mutate(data = map(data, ~mutate(.x, date = as.Date(date)))) %>% # convert date to date format
+  select(-symbol) %>%
+  unnest_legacy()
+
+# head(price_data)
+```
+# 2. EDA
+
+
+
+### Three Metrics: High, Low, and Adjusted Close Price
+visualize all companies at once to decide which price metric (open, close, or adjusted) to focus on.
+Box-plots for all companies across different metrics might compare the distributions.
+
+
+```{r}
+price_long <- price_data %>%
+    group_by(gics_sector) %>%
+  pivot_longer(cols = c("high","low","adjusted"), names_to = "price_type", values_to = "price_value")
+
+price_long %>%
+    ggplot(aes(x = date, y = price_value, color = price_type)) +
+    geom_point(size = 0.1) +
+    facet_wrap(~gics_sector, scales = "free_y") +
+        # pastel
+    scale_color_brewer(palette = "Pastel2") +
+    labs(title = "Price Metrics Comparison by GICS Sector", x = "Date", y = "Price Value") +
+    theme_minimal() +
+    theme(legend.position = "top")
+
+
 ```
 
 
 
-
-#### visualize all key metrics
-visualize all companies at once to decide which price metric (open, close, or adjusted) to focus on. 
-Boxplots for all companies across different metrics might compare the distributions.
-
-
 ```{r}
-
-price_long <- price_data %>% select( c(,8:15)) %>%
-  pivot_longer(cols =  adjusted, names_to = "price_type", values_to = "price")
-
-# # log-transformed y-axis
-price_long %>% 
-  ggplot(., aes(x = price_type, y = price, fill = price_type)) +
-  geom_boxplot() +
-  scale_y_log10() +  # Apply log scale to the y-axis
-  scale_fill_brewer(palette = "Pastel2") +
-  labs(title = "Comparison of Open, Close, and Adjusted Prices (Log Scale)", 
-       x = "Price Type", y = "Log Price") +
-  theme(legend.position = "none")
-
-```
+#  volume data across sectors over time
+volume_data <- price_data %>%
+        group_by(gics_sector) %>%
+    pivot_longer(cols = "volume", names_to = "volume_type", values_to = "volume") %>%
+    # by sector; only compare the volume
+    # take the mean vaolume for one sector on each day and plot
+    group_by(date, gics_sector, volume_type) %>%
+  summarise(mean_volume = mean(volume, na.rm = TRUE))
 
 
+    # distribution plot
+volume_data %>% ggplot(aes(x = mean_volume, fill = gics_sector)) +
+    geom_density(alpha = 0.5) +
+        scale_fill_brewer( #discrete_scale
+        palette = "Set3") +
+    labs(title = "Volume Distribution by GICS Sector", x = "Volume", y = "Density") +
+    theme_minimal() +
+    theme(legend.position = "top")
 
-```{r}
 
+# then by date
+volume_data %>%
+        summarise(mean_volume = mean(volume, na.rm = TRUE)) %>%
+        ggplot(aes(x = date, y = mean_volume, color = gics_sector)) +
+        geom_line() +
+        scale_fill_brewer(palette = "Set3") +
+        labs(title = "Volume Distribution by GICS Sector", x = "Date", y = "Volume") +
+        theme_minimal() +
+        theme(legend.position = "top")
 
-# Reshape the merged data to long format for the price metrics
-merged_long <- price_data %>%
-  select(gics_sector, symbol, adjusted, volume) %>%
-  pivot_longer(cols =c("volume",), names_to = "metric", values_to = "value")
-
-# Boxplot: Compare open, close, and adjusted prices by sector
-ggplot(merged_long, aes(x = metric, y = value, fill = metric)) +
-  geom_boxplot() +
-  scale_fill_brewer(palette = "Pastel2") +
-  facet_wrap(~ gics_sector, scales = "free_y") +
-  labs(title = "Adjusted & Vollume Comparison by GICS Sector", x = "Metric", y = "Value") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
 
 ```
 
 ### Returns
 
+The adjusted close price is used to calculate the returns because it  neutralizes the effects of corporate actions that would otherwise alter the stock’s price and thus is meant to reflect the true value of a stock as opposed to its performance.  For example, if a company undergoes a 2-for-1 stock split, the price of the stock would be halved, but the adjusted price would be modified to reflect the pre-split value.
 
-
-The adjusted close price is used to calculate the returns because it  neutralizes the effects of corporate actions that would otherwise alter the stock’s price and thus is meant to reflect the true value of a stock as opposed to its performance.  For example, if a company undergoes a 2-for-1 stock split, the price of the stock would be halved, but the adjusted price would be modified to reflect the pre-split value. 
-
-Since we are comparing across different companies or sectors over time across time periods, we might want to normalizes the return. Thus, 'returns' are defined and calculated in this context as the percentage change in adjusted close price from period $i-1$ to period $i$:
+Since we are comparing across different companies or sectors over time across time periods, we might want to normalize the return. Thus, 'returns' are defined and calculated in this context as the percentage change in adjusted close price from period $i-1$ to period $i$:
 
 \[
 R_i=\frac{P_i-P_{i-1}}{P_{i-1}}=\frac{P_i}{P_{i-1}}-1, \quad t=1,2, \ldots
@@ -268,18 +276,19 @@ Compared to absolute price changes, percentage returns make it easier to compare
 returns_all <- price_data %>%
   arrange(symbol, date) %>%
   group_by(symbol) %>% # group by symbol to calculate returns for each company
-  mutate(return = (adjusted - lag(adjusted))/adjusted * 100) %>% 
-  na.omit() %>% ungroup()
+  mutate(return = (adjusted - lag(adjusted)) / adjusted * 100) %>%
+  na.omit() %>%
+  ungroup()
 
 
-returns <-  returns_all %>% select(c(1, 8:16))
-# saveRDS(returns, "data/returns.RData")
-head(returns)
+returns <- returns_all %>% select(c(1, 8:16))
+#saveRDS(returns, "data/returns.RData")
+#head(returns)
 
 ```
 
 
-This is a more intuitive and concise repretation of the previous return data.
+This is a more intuitive and concise representation of the previous return data.
 
 
 ```{r}
@@ -289,69 +298,68 @@ returns_wide <- returns %>%
   pivot_wider(id_cols = date, names_from = symbol, values_from = return)
 head(returns_wide)
 
-#saveRDS(returns_wide, "data/returns_wide.RData")
+# saveRDS(returns_wide, "data/returns_wide.RData")
 ```
 
 
 
-# 2. EDA
-## Univariate Analysis
+
+## Uni-variate Analysis
 
 ```{r}
 # Count the number of companies in each sector (gics_sector)
-sectors <- sp500_price %>%
+sectors <- price_data %>%
   group_by(gics_sector) %>%
   summarise(company_count = n()) %>%
-  arrange(desc(company_count)) %>% 
-  mutate(percentage = round(100 * company_count / sum(company_count), 1)) 
+  arrange(desc(company_count)) %>%
+  mutate(percentage = round(100 * company_count / sum(company_count), 1))
 
 
-sectors <-  sectors %>% mutate(label = paste0(company_count, "\n(", percentage, "%)"))
+sectors <- sectors %>% mutate(label = paste0(company_count, "\n(", percentage, "%)"))
 
 # Create the pie chart
 ggplot(sectors, aes(x = "", y = company_count, fill = gics_sector)) +
   geom_bar(stat = "identity", width = .5) +
-  coord_polar("y", start = 0) + 
-  scale_fill_brewer(palette = "Set3") +  
+  coord_polar("y", start = 0) +
+  scale_fill_brewer(palette = "Set3") +
   labs(title = "Sector Distribution in Current S&P 500 by Company Count") +
   theme_void() +
-  geom_text(angle = 10, aes(label = sectors$label), position = position_stack(vjust = 0.5), size =3)
+  geom_text(angle = 10, aes(label = sectors$label), position = position_stack(vjust = 0.5), size = 3)
 
 
-sectors %>% slice(1:4) %>%
-ggplot(., aes(x = "", y = company_count, fill = gics_sector)) +
+sectors %>%
+  slice(1:4) %>%
+  ggplot(., aes(x = "", y = company_count, fill = gics_sector)) +
   geom_bar(stat = "identity", width = 1) +
-  coord_polar("y", start = 0) + 
-  scale_fill_brewer(palette = "Set3") +  
+  coord_polar("y", start = 0) +
+  scale_fill_brewer(palette = "Set3") +
   labs(title = "Top 5 Sectors in Current S&P 500") +
   theme_void() +
-  geom_text(angle = 45, aes(label = company_count), position = position_stack(vjust = 0.5), size =3, check_overlap = TRUE) 
-     
+  geom_text(angle = 45, aes(label = company_count), position = position_stack(vjust = 0.5), size = 3, check_overlap = TRUE)
+
 ```
 
 
 
 
-From this bar chart, we can observe that the largest sectors in the S&P 500 are Financials, Industrials, Information Technology, and 
+From this bar chart, we can observe that the largest sectors in the S&P 500 are Financials, Industrials, Information Technology, and
 Health Care.
 
 
 ##### Average Daily Adjusted Close Price and Return
- 
+
 The Left Panel shows the mean adjusted close price across all companies from 2023 to 2024.
 
 The Right Panel shows the average daily returns (%) across all companies from 2023 to 2024.
 
 
 ```{r}
-# install.packages("gridExtra")
-library(gridExtra)
-library(grid)
+
 plot_list <- list()
 
 # Loop to calculate the mean of 'adjusted' and 'return' across all companies over time
 for (metric in c("adjusted", "return")) {
-  
+
   # Create the mean calculation for the chosen metric
   p <- returns_all %>%
     # Pivot the data so each symbol's 'metric' becomes a column
@@ -362,9 +370,9 @@ for (metric in c("adjusted", "return")) {
     ggplot(aes(x = date, y = mean_all)) +
     geom_line(color = "blue") +
     labs(
-         x = "", y = paste("", metric)) +
+      x = "", y = paste("", metric)) +
     theme_light()
-  
+
   plot_list[[metric]] <- p
 }
 
@@ -381,24 +389,24 @@ grid.arrange(
 ```
 
 ###### Percentage Returns vs. Absolute Price Changes:
-- Returns measure the relative change in stock prices from one period to the next. 
-  - It displays a pronounced upward trend.While it seem somehow counter-intuitive at first, it is in fact the case in a growing economy or during periods of market expansion or high inflation. Furthermore, since the S&P 500 is composed of large, established companies, many of which have demonstrated long-term growth, the mean adjusted price naturally rises over time. 
+- Returns measure the relative change in stock prices from one period to the next.
+- It displays a pronounced upward trend.While it seem somehow counter-intuitive at first, it is in fact the case in a growing economy or during periods of market expansion or high inflation. Furthermore, since the S&P 500 is composed of large, established companies, many of which have demonstrated long-term growth, the mean adjusted price naturally rises over time.
 
-  - While individual daily returns fluctuate considerably, their overall range tends to be constrained (usually between -3% and 3%, depending on market conditions). 
+- While individual daily returns fluctuate considerably, their overall range tends to be constrained (usually between -3% and 3%, depending on market conditions).
 - By contrast, adjusted stock prices reflect absolute changes, which can be substantial over time. As seen in the left panel of the chart, the adjusted price rises from approximately 165 to over 220 between 2023 and 2024—a significant increase.
 
 ######  Takeaways
 - Both Price metrics and percentage returns are associated with the market but behave differently.
-- Even though returns exhibit high volatility on a daily basis, the overall difference in cumulative percentage returns from the beginning to the end of the period is relatively stable when compared to absolute price changes. 
+- Even though returns exhibit high volatility on a daily basis, the overall difference in cumulative percentage returns from the beginning to the end of the period is relatively stable when compared to absolute price changes.
 - Stock prices tend to drift upwards or downwards more prominently in terms of the values.
-- While the overall market grows, day-to-day price changes can be erratic. In other words, despite short-term fluctuations, the market's overall trajectory is positive. 
+- While the overall market grows, day-to-day price changes can be erratic. In other words, despite short-term fluctuations, the market's overall trajectory is positive.
 
 - *In relation to the following analysis*, the percentage returns naturally normalize the data and seem more suitable for more meaningful comparisons across companies, regardless of their price levels. Thus, I did the clustering based on returns, hoping to identify companies with similar performance patterns.
 
 
 
 
-##### Average daily return by sector
+##### Average daily stock returns across different sectors
 
 "Average Daily Returns by Sector" shows the average daily stock returns across different sectors of companies. It tells us which sectors experienced higher or lower average daily returns.
 
@@ -409,30 +417,20 @@ Sectors like Consumer Staples and Health Care have negative average daily return
 
 ```{r}
 # Average daily stock returns across different sectors
-mean_returns_by_sector %>% 
-  group_by(gics_sector) %>%  
-  summarise(grand_mean_return = mean(mean_return, na.rm = TRUE)) %>%
-  ggplot(., aes(x = reorder(gics_sector, grand_mean_return), y = grand_mean_return)) +
-  geom_bar(stat = "identity", fill = "palegreen") +
-  coord_flip() +
-  labs(title = "Average Daily Returns by Sector",
-       x = "Sector", y = "Average Return")
+mean_return <- returns_all %>%
+  group_by(gics_sector) %>%
+  summarise(mean_return = mean(return, na.rm = TRUE)) %>%
+    arrange(desc(mean_return))
 
-# Calculate mean percentage return per sector for each day
-mean_returns_by_sector <- returns_all  %>%
-  group_by(date, gics_sector)  %>%  
-  summarise(mean_return = mean(return, na.rm = TRUE))
-
-mean_returns_by_sector %>%
-   filter(gics_sector %in% sectors$gics_sector[1:4]) %>%
-  ggplot(., aes(x = date, y = mean_return, color = gics_sector)) +
-  geom_line(linewidth = .4) +
-  labs(title = "Mean Return by Sector", 
-       x = "Date", y = "Percentage Return") +
-  theme_minimal() +
-  theme(legend.position = "top", legend.title = element_blank())
-
+mean_return %>%
+    ggplot(aes(x = reorder(gics_sector, mean_return), y = mean_return, fill = gics_sector)) +
+    geom_bar(stat = "identity", fill = gray(0.8)) +
+    coord_flip() +
+    labs(title = "Average Daily Returns by Sector", x = "Sector", y = "Mean Return (%)") +
+    theme_minimal() +
+    theme(legend.position = "none")
 ```
+
 
 
 Information Technology consistently has the highest average daily return, which aligns with broader market trends. Tech stocks have outperformed other sectors due to ongoing digital transformation and innovation.
@@ -441,57 +439,75 @@ At the same time, Information Technology and Financials display the most fluctua
 
 It's important to note that the largest sectors in the S&P 500 are Financials, Industrials, Information Technology, and Health Care. Information Technology is both the most profitable and the most dominant sector. However, having the largest representation in the index doesn’t necessarily equate to profitability, as seen with Health Care. This sector, which leans towards more public service-oriented industries, tends to be less volatile, offering steady but lower returns.
 
-Interestingly, Financials was expected to be more profitable or have a higher return. However, it may be underperforming due to economic inflation, recent trade issues, and other macroeconomic factors affecting the financial industry.
+Interestingly, Financials was expected to be more profitable or have a higher return. However, it may be underperformed due to economic inflation, recent trade issues, and other macroeconomic factors affecting the financial industry.
 
 
 ## Bi-variate Analysis
 
-#### Dimension Reduction by clustering
+To identify patterns in stock returns across companies, I applied **k-means clustering** to group companies based on their **return behavior**. The goal of this analysis was to group companies with similar return patterns, helping to reveal underlying structures in the data that may not be immediately apparent through traditional analysis.
+
+##### Multidimensional Scaling (MDS) & Clustering
+
+
+
+
 
 
 ```{r}
-dissimilarity_matrix <- dist(ret_matrix, method = "euclidean")
-hc <- hclust(dissimilarity_matrix, method = "ward.D2")
-k = 10 # number of clusters
-cluster <- cutree(hc, k = 10)
+# one - abs(correlation) to get dissimilarity
+corr_matrix <- cor(ret_matrix, use = "complete.obs", abs = TRUE)
+dissimilarity_matrix <- as.dist(1 - corr_matrix)
+
+
+hc <- dissimilarity_matrix  %>% hclust() #hierarchical clustering
+cluster <- cutree(hc, k = 5)
 # plot dendrogram with cluster
-hc %>% as.dendrogram() %>% color_branches(k = 10) %>%
-    color_labels(k = 10) %>%  set('labels_cex', 0.6) %>%
-    plot(main = "Hiearchical Clustering")
+hc %>%
+        as.dendrogram() %>%
+        color_branches(k = 10) %>%
+        color_labels(k = 10) %>%
+        set('labels_cex', 0.6) %>%
+        plot(main = "Hiearchical Clustering")
+
+# umap for 2D visualization
+umap_results <- umap::umap(dissimilarity_matrix, n_neighbors = 15, min_dist = 0.1, metric = "euclidean")
+# visualize the results
+umap_results %>%
+  as.data.frame() %>%
+  ggplot(aes(x = V1, y = V2)) +
+  geom_point() +
+  labs(title = "UMAP Visualization of Stock Returns", x = "UMAP 1", y = "UMAP 2") +
+  theme_minimal()
+```
+
+
+```{r}
+number_clusters <- 5 #how many clusters do you want to select
+
+#use the ggdend function to make the chart workable in ggplot
+hc %>%
+  as.dendrogram() %>%
+  color_branches(k = number_clusters) %>%
+    color_labels(k = number_clusters) %>%
+    set('labels_cex', 0.6) %>%
+    as.ggdend() %>%
+    ggplot() +
+    theme_void() +
+    theme(axis.text.x = element_blank(), axis.text.y = element_blank(), axis.title = element_blank())
+
+```
+
+
+```{r}
+fviz_nbclust(dissimilarity_matrix, k.max = 8, FUNcluster = hcut, method = "wss")
+
+fviz_nbclust(dissimilarity_matrix, k.max = 8, FUNcluster = hcut , method = "silhouette")
 ```
 
 
 
 ```{r}
-ret_matrix <- returns %>% select(symbol, date, return) %>%
-  spread(key = date, value = return, fill = 0)
-
-# Remove rows with NA, NaN, or Inf values
-returns_scaled <- ret_matrix %>% select(-symbol) %>%
-  scale(.) %>% na.omit()
-           
-
-# Perform k-means clustering with 5 clusters
-set.seed(123)  # For reproducibility
-
-
 kmeans_obj <- kmeans(returns_scaled, centers = 5, nstart = 20)
-print(kmeans_obj$cluster)  # Cluster assignment for each row
-# Total within-cluster sum of squares
-wss <- sum(kmeans_obj$withinss)
-print(wss)
-```
-
-
-```{r}
-#  WSS for different number of clusters 
-fviz_nbclust(returns_scaled, k.max = 20, FUNcluster = hcut, method = "wss")
-
-fviz_nbclust(returns_scaled, k.max = 20, FUNcluster = hcut , method = "silhouette")
-```
-
-```{r}
-kmeans_obj <- kmeans(returns_scaled, centers = 2, nstart = 20)
 
 # Perform PCA for visualization
 pca_results <- prcomp(returns_scaled, scale. = TRUE)
@@ -519,7 +535,7 @@ pca_data$cluster <- as.factor(kmeans_obj$cluster)
 
 # Plot PCA results with clusters
 ggplot(pca_data, aes(x = PC1, y = PC2, color = cluster)) +
-  geom_point(size = 2) +
+  geom_point(size = 4) +
   labs(title = "K-means Clustering (PCA Projection)", x = "PC1", y = "PC2") +
   theme_minimal()
 
@@ -527,6 +543,13 @@ ggplot(pca_data, aes(x = PC1, y = PC2, color = cluster)) +
 
 
 
+
+
+## Possible Extensions
+
+
+
+## Conclusion
 
 
 
