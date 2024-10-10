@@ -324,7 +324,7 @@ if (!exists("returns_wide")) {
 }
 
 if (!exists("returns_all")) {
-  price_data <- readRDS("data/returns_all.RData")
+  returns_all <- readRDS("data/returns_all.RData")
 }
 
 ```
