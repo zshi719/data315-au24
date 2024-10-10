@@ -1,7 +1,7 @@
 ---
-title: "Clustering with K-Means and UMAP: S&P 500 Stock Prices"
+title: "Assignment 1"
 author: "Victoria Shi"
-date: "2/19/2019"
+date: "10/09/2024"
 output:
   html_document:
     toc: true
