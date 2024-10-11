@@ -10,7 +10,7 @@ output:
     highlight: tango
     df_print: paged
 editor_options:
-chunk_output_type: inline
+  chunk_output_type: inline
 ---
 
 ```{r setup, warning = FALSE, include=FALSE, message=FALSE}
@@ -23,59 +23,29 @@ library(tidyquant)
 library(broom)
 library(umap)
 library(plotly)
-library(dplyr)
 library(ggplot2)
 library(cluster)
 library(psych)
 library(factoextra)
-conflicted::conflict_prefer("select", "dplyr")
-conflicted::conflict_prefer("filter", "dplyr")
-
-library(dplyr)
-library(purrr)
 library(xts)
 library(TTR)
-library(tidyr)
 library(quantmod)
-library(tidyverse)
-library(tidyquant)
 library(PerformanceAnalytics)
 library(yfR)
-library(tidyquant)
-library(broom)
-library(umap)
-library(plotly)
-library(dplyr)
-# Set the theme and palette
-library(ggplot2)
-library(RColorBrewer)
-library(dplyr)
 library(dendextend)
-library(RColorBrewer)
-library(factoextra)
-library(cluster)
 library(lubridate)
 library(stats)
 library(janitor)
-conflicted::conflicts_prefer(dplyr::filter)
-conflicted::conflicts_prefer(dplyr::select)
 library(gridExtra)
 library(grid)
-theme_set(theme_light())
-library(RColorBrewer)
-conflicted::conflicts_prefer(dplyr::lag)
 library(rvest)
-library(tidyquant)
-library(broom)
-library(umap)
-library(plotly)
-library(dplyr)
-# Set the theme and palette
-library(ggplot2)
-library(RColorBrewer)
 conflicted::conflict_prefer("select", "dplyr")
-conflicted::conflict_prefer("filter", "dplyr") 
-knitr::opts_chunk$set(digits.signif = 4, tidy = TRUE, tidy.opts=list(blank = FALSE, warning = FALSE), message = TRUE, echo = TRUE, width='80%', widt.cutoff = '60')
+conflicted::conflict_prefer("filter", "dplyr")
+conflicted::conflict_prefer("lag", "dplyr")
+
+# Set the theme and palette
+theme_set(theme_light())
+knitr::opts_chunk$set(digits.signif = 4, tidy = TRUE, tidy.opts = list(blank = FALSE, warning = FALSE), message = TRUE, echo = TRUE, width = '80%', widt.cutoff = '60')
 ```
 
 
@@ -113,7 +83,9 @@ returns <- readRDS("data/returns.RData")
 
 url <- 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
 
-sp500 <- url %>% read_html() %>% html_table(fill = TRUE, trim = TRUE)
+sp500 <- url %>%
+  read_html() %>%
+  html_table(fill = TRUE, trim = TRUE)
 ```
 
 We extracted two primary tables from the webpage: the current S&P 500 company stocks data and selected historical changes in S&P 500 companies. We further cleaned it by removing missing values, formatting (to ensure string or date-time consistency), and filtering it for analysis.
@@ -148,17 +120,20 @@ Next, we extracted the stock prices for the current S&P 500 companies for the pa
 
 ```{r price history, eval=FALSE}
 # Fetch stock price history for each S&P 500 company
-pull_all_data <- . %>% tq_get(from = "2023-01-01") %>% as.data.frame()
+pull_all_data <- . %>%
+  tq_get(from = "2023-01-01") %>%
+  as.data.frame()
 
 price_data <- current %>%
   mutate(symbol = str_replace_all(symbol, "[.]", "-")) %>%
   mutate(data = map(symbol, pull_all_data)) %>%
-  na.omit() 
+  na.omit()
 ```
 
 
 ```{r}
-price_data <- price_data %>% mutate(data = map(data, ~mutate(.x, date = as.Date(date)))) %>% # convert date to date format
+price_data <- price_data %>%
+  mutate(data = map(data, ~mutate(.x, date = as.Date(date)))) %>% # convert date to date format
   select(-symbol) %>%
   unnest_legacy()
 ```
@@ -187,10 +162,10 @@ returns_all <- price_data %>%
 
 
 # filter out only the most relevant columns
-returns <- returns_all[,c(1,8:16)]
+returns <- returns_all[, c(1, 8:16)]
 ```
 
-Note: The `adjusted` close is used as it accounts for factors like stock split and is meant to be a more accurate reflection of the true stock value over time. 
+Note: The `adjusted` close is used as it accounts for factors like stock split and is meant to be a more accurate reflection of the true stock value over time.
 
 ### Data Overview
 
@@ -220,7 +195,7 @@ returns_wide <- returns %>%
 # Exploratory Data Analysis
 
 
-The S&P 500 index includes about 80% of the American market capitalization, so we might want to first understand the distribution of S&P 500 stocks - in terms of sector, location, and history. 
+The S&P 500 index includes about 80% of the American market capitalization, so we might want to first understand the distribution of S&P 500 stocks - in terms of sector, location, and history.
 
 ## Sector Analysis (Univariate)
 
@@ -260,7 +235,7 @@ ggplot(sector_distribution, aes(x = "", y = company_count, fill = gics_sector)) 
 The pie chart more or less reflects the diversified nature of the S&P 500. However, most sectors each make up less than 10% of the total companies. The market index is dominated by a few sectors: Information Technology, Financials, Industrials, and Health Care. Each represent over 10% of the total companies. Communication Services and Energy sectors are the least represented.This underrepresentation could be due to economic shifts toward IT or the government-owned or public nature of these companies, which are not as heavily represented in the publicly traded market. These trends reflect broader structural changes in the economy.
 
 
-#### History Records 
+#### History Records
 
 We look at the changes in the number of companies added and removed each year to get a sense of market dynamics over time.
 
@@ -302,7 +277,7 @@ ggplot(price_data, aes(x = founded, y = date_added)) +
 ggplot(price_data, aes(x = gics_sector, y = founded)) +
   geom_boxplot() +
   coord_flip() +
-  labs(title = "Distribution of Founding Year by Sector", 
+  labs(title = "Distribution of Founding Year by Sector",
        x = "GICS Sector", y = "Year Founded")
 ```
 
@@ -311,12 +286,12 @@ ggplot(price_data, aes(x = gics_sector, y = founded)) +
 # Visualize company changes over time
 ggplot(company_changes, aes(x = year)) +
   geom_line(aes(y = companies_added, color = "Added"), size = 1, lty = 2, color = "#1F78B4") +
-  geom_line(aes(y = companies_removed, color = "Removed"), size = .5, lty =1, color = "#FB9A99") +
+  geom_line(aes(y = companies_removed, color = "Removed"), size = .5, lty = 1, color = "#FB9A99") +
   labs(title = "Documented Changes in the Number of S&P 500 Company Listings Over Time", x = "Year", y = "Number of Companies") +
   theme_tq()
 ```
-The number of companies remains pretty stable - after all, we are looking at S&P **500**. 
-  
+The number of companies remains pretty stable - after all, we are looking at S&P **500**.
+
 ### Price Metrics
 
 We first visualize the adjusted close prices and close prices across all companies by sector. In the plot, both adjusted close prices and close prices closely follow the same trend lines across all sectors. The points for adjusted close and close prices are nearly overlapping in many areas, indicating that there is likely a strong positive correlation between these two metrics across time for each sector.
@@ -334,18 +309,18 @@ price_data %>%
   summarise(avg_adjusted = mean(adjusted), avg_close = mean(close)) %>%
   ggplot() +
   # Plot avg_adjusted
-  geom_point(aes(x = date, y = avg_adjusted, color = "Adjusted Close"), size=.1) +
+  geom_point(aes(x = date, y = avg_adjusted, color = "Adjusted Close"), size = .1) +
   # Plot avg_close
   geom_point(aes(x = date, y = avg_close, color = "Close"), size = .1) +
   facet_wrap(~gics_sector, scales = "free_y") +
-  labs(title = "Sectoral Trends in S&P 500 Close Prices", 
+  labs(title = "Sectoral Trends in S&P 500 Close Prices",
        x = "Date (2023-2024)", y = "Price") +
   scale_color_manual(values = c("Adjusted Close" = "#FB9A99", "Close" = "#1F78B4")) +
   theme_minimal(base_size = 10) +
-  theme(legend.position = "top", 
-        axis.text.x = element_blank(), 
-        axis.ticks.x = element_blank(), 
-        axis.text.y = element_blank(), 
+  theme(legend.position = "top",
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
         axis.ticks.y = element_blank())
 ```
 
@@ -355,7 +330,7 @@ In addition, the adjusted price seem to track well with close prices over time, 
 
 
 
-#### On marke trends
+#### On make trends
 - Information Technology and Communication Services, and Information Technology show a clear, consistent upward trend, with little deviation between the adjusted close and the close.
 - Financials exhibit steady growth with some minor fluctuations over time.
 - Health Care and Consumer Staples experience notable volatility in the middle of the period -  Consumer Staples even reached the new low - followed by recovery toward the end.
@@ -381,7 +356,7 @@ ggplot(mean_returns, aes(x = reorder(gics_sector, mean_return), y = mean_return)
   geom_bar(stat = "identity", fill = "lightsteelblue") +
   coord_flip() +
   labs(title = "Average Returns on Stock Across Sectors", x = "", y = "Mean Return (%)") +
-    theme_tq()
+  theme_tq()
 ```
 
 
@@ -440,11 +415,11 @@ returns_all %>%
   summarise(avg_adjusted = mean(adjusted, na.rm = TRUE), avg_return = mean(return, na.rm = TRUE)) %>%
   ggplot(aes(x = date)) +
   geom_line(aes(y = avg_adjusted, color = "Adjusted Close"), size = .5) +
-  geom_line(aes(y = avg_return * 100, color = "Return"), size = 0.5, alpha=.5, linetype = "dashed") + 
+  geom_line(aes(y = avg_return * 100, color = "Return"), size = 0.5, alpha = .5, linetype = "dashed") +
   facet_wrap(~gics_sector, scales = "free_y") +
   scale_y_continuous(
     name = "Adjusted Close Price",
-    sec.axis = sec_axis(~./100, name = "Return (%)")
+    sec.axis = sec_axis(~. / 100, name = "Return (%)")
   ) +
   labs(title = "", x = "Date") +
   scale_color_manual(values = c("Adjusted Close" = "#FB9A99", "Return" = "#1F78B4")) +
@@ -458,11 +433,11 @@ Looking at Sector Breakdown, We can find that Information Technology consistentl
 
 At the same time, IT and Financials display the most fluctuation in returns - risk is more concentrated in growth sectors. This suggests a *trade-off between risk and return*.
 
-The largest representation in the index doesn’t necessarily equate to profitability - as seen with Health Care. This sector is in the top 4 sectors by company count yet seems to yield negative returns (using the data in the analysis; limited time frame). 
+The largest representation in the index doesn’t necessarily equate to profitability - as seen with Health Care. This sector is in the top 4 sectors by company count yet seems to yield negative returns (using the data in the analysis; limited time frame).
 
 It could be it leans towards more public service-oriented industries, which tends to be less volatile and offers steady but lower returns.
 
-Interestingly, I expected Financials to be have one of the highest returns. However, it may be underperformed due to economic inflation, recent trade issues, and other macroeconomic factors affecting the financial industry.
+Interestingly, I expected Financials to be one of the highest returns. However, it may be underperformed due to economic inflation, recent trade issues, and other macroeconomic factors affecting the financial industry.
 
 
 - While the overall market grows, day-to-day price changes can be erratic. In other words, despite short-term fluctuations, the market's overall trajectory is positive.
@@ -476,67 +451,69 @@ Interestingly, I expected Financials to be have one of the highest returns. Howe
 library(ggrepel)
 returns_matrix <- returns_all %>%
   #  symbol in 1st column, follow by the stock return on each day in all other columns of every stock
-  pivot_wider(id_cols = symbol, names_from = date, values_from = return, values_fill=0)
-              
+  pivot_wider(id_cols = symbol, names_from = date, values_from = return, values_fill = 0)
+
 kmeans_mapper <- function(centers = 3) {
-    
-    returns_matrix %>% select(-symbol) %>% na.omit() %>%
-        kmeans(centers = centers, nstart = 100)
+
+  returns_matrix %>%
+    select(-symbol) %>%
+    na.omit() %>%
+    kmeans(centers = centers, nstart = 100)
 }
 
 cluster_map <- tibble(centers = 1:15) %>%
-    mutate(k_means = centers %>% purrr::map(kmeans_mapper)) %>%
-    mutate(glance  = k_means %>% purrr::map(glance))
+  mutate(k_means = centers %>% purrr::map(kmeans_mapper)) %>%
+  mutate(glance = k_means %>% purrr::map(glance))
 
 cluster_map %>%
-    unnest(glance) %>%
-    select(centers, tot.withinss)
+  unnest(glance) %>%
+  select(centers, tot.withinss)
 
 cluster_map %>%
-    unnest(glance) %>%
-    select(centers, tot.withinss) %>%
-    ggplot(aes(centers, tot.withinss)) +
-    geom_point(color = "lightblue", size = 4) +
-    geom_line(color = "#1F78B4", size = 1) +
-    ggrepel::geom_label_repel(aes(label = centers), color = "#1F78B4") + 
-    theme_tq() +
-    labs(
-        title = "Skree Plot"
-    )
+  unnest(glance) %>%
+  select(centers, tot.withinss) %>%
+  ggplot(aes(centers, tot.withinss)) +
+  geom_point(color = "lightblue", size = 4) +
+  geom_line(color = "#1F78B4", size = 1) +
+  ggrepel::geom_label_repel(aes(label = centers), color = "#1F78B4") +
+  theme_tq() +
+  labs(
+    title = "Skree Plot"
+  )
 ```
 
 
 ```{r}
 
 umap_obj <- returns_matrix %>%
-     select(-symbol)  %>%
-    umap()
+  select(-symbol) %>%
+  umap()
 
 mapped <- umap_obj$layout %>%
-    as_tibble() %>%
-    set_names(c("x", "y")) %>%
-    bind_cols(
-        returns_matrix %>% select(symbol)
-    ) 
+  as_tibble() %>%
+  set_names(c("x", "y")) %>%
+  bind_cols(
+    returns_matrix %>% select(symbol)
+  )
 
 clusters <- cluster_map %>%
-    pull(k_means) %>%
-    pluck(5)  %>% 
-    augment(returns_matrix) %>%
-    select(symbol, .cluster)
+  pull(k_means) %>%
+  pluck(5) %>%
+  augment(returns_matrix) %>%
+  select(symbol, .cluster)
 
 mapped %>%
-    left_join(clusters, by = "symbol") %>%
-    mutate(label_text = str_glue("Company: {symbol}
+  left_join(clusters, by = "symbol") %>%
+  mutate(label_text = str_glue("Company: {symbol}
                                  Cluster: {.cluster}")) %>%
-    ggplot(aes(x, y, color = .cluster)) +
-    geom_point() +
-    theme_tq() +
-    scale_color_brewer(type = "qual") +
-    labs(
-        title = "Sector Segmentation by Stock Returns in the S&P 500 Index",
-        subtitle = "2D projection"
-    ) 
+  ggplot(aes(x, y, color = .cluster)) +
+  geom_point() +
+  theme_tq() +
+  scale_color_brewer(type = "qual") +
+  labs(
+    title = "Sector Segmentation by Stock Returns in the S&P 500 Index",
+    subtitle = "2D projection"
+  )
 ```
 
 
@@ -544,7 +521,7 @@ mapped %>%
 
 # Possible Extensions
 
-**Location-Based Analysis** is an area of interest and potential excitiing findings. It would be interesting to explore the geographical distribution of company headquarters in more detail. Some key questions include: Do headquarters tend to cluster in specific cities or regions? Additionally, is there a temporal effect where older headquarters locations attract more companies over time, or do we observe a dispersal effect, where companies move away from traditional hubs? This could resemble historical patterns like the decline of the Rust Belt and the rise of the Sun Belt in the U.S., where economic and industrial shifts influenced corporate decisions on where to establish headquarters. These trends could provide valuable insights into regional economic growth and the changing corporate landscape.
+**Location-Based Analysis** is an area of interest and potential exciting findings. It would be interesting to explore the geographical distribution of company headquarters in more detail. Some key questions include: Do headquarters tend to cluster in specific cities or regions? Additionally, is there a temporal effect where older headquarters locations attract more companies over time, or do we observe a dispersal effect, where companies move away from traditional hubs? This could resemble historical patterns like the decline of the Rust Belt and the rise of the Sun Belt in the U.S., where economic and industrial shifts influenced corporate decisions on where to establish headquarters. These trends could provide valuable insights into regional economic growth and the changing corporate landscape.
 
 Another compelling question is whether specific sectors tend to cluster in certain regions. For example, Silicon Valley is well-known for its concentration of technology companies. Exploring whether the location of a company’s headquarters correlates with stock performance could reveal important regional trends. Tech-oriented regions, like Silicon Valley, might show higher returns due to their industry concentration, making location a potential factor in predicting company performance.
 
