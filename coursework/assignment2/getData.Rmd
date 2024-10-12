@@ -1,0 +1,52 @@
+
+```{r}
+library(janitor)
+library(gridExtra)
+library(grid)
+library(rvest)
+library(dplyr)
+library(knitr)
+conflicted::conflict_prefer("select", "dplyr")
+conflicted::conflict_prefer("filter", "dplyr")
+conflicted::conflict_prefer("lag", "dplyr")
+library(RColorBrewer)
+palette(brewer.pal(6, "Set3"))
+
+url <- 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
+
+sp500 <- url %>%
+  read_html() %>%
+  html_table(fill = TRUE, trim = TRUE)
+
+# S&P 500 companies
+sp500_company <- sp500[[1]] %>%
+  janitor::clean_names() %>%
+  as.data.frame() %>%
+  mutate(founded =  as.Date(as.character(founded), format = "%Y"),
+         `date_added` = as.Date(`date_added`)) %>%
+  na.omit()
+
+pull_all_data <- . %>%
+  tq_get(from = "2023-01-01", ) %>%
+  as.data.frame()
+
+stock_quote <- sp500_company %>% 
+  select(symbol) %>% 
+  unique() %>%
+  mutate(symbol = str_replace_all(symbol, "[.]", "-")) %>%
+  mutate(data = map(symbol, pull_all_data)) %>%
+  na.omit() %>%
+  select(-symbol) %>%
+  unnest_legacy()
+
+# S&P 500 Stock Data (All Metrics including return)
+stock_return <- stock_quote %>%
+  arrange(symbol, date) %>%
+  group_by(symbol) %>%
+  # calcuate return
+  mutate(return = (adjusted - lag(adjusted)) / lag(adjusted) * 100) %>%
+  na.omit()
+
+```
+
+
