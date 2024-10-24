@@ -84,7 +84,7 @@ timer$getTimeElapsed("e")
 Trust (SPY)](https://www.slickcharts.com/sp500 "S&P 500 ETF Components")
 
 |   | Company | Symbol | Weight |
-|:-----|:------------------------------|:-----------|:--------|
+|:------------|:-----------------------|:----------|:-----------|
 | 1 | [Apple Inc.](https://www.slickcharts.com/symbol/AAPL) | [AAPL](https://www.slickcharts.com/symbol/AAPL) | 7.26% |
 | 2 | [Nvidia Corp](https://www.slickcharts.com/symbol/NVDA) | [NVDA](https://www.slickcharts.com/symbol/NVDA) | 7.14% |
 | 3 | [Microsoft Corp](https://www.slickcharts.com/symbol/MSFT) | [MSFT](https://www.slickcharts.com/symbol/MSFT) | 6.29% |
