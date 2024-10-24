@@ -1,0 +1,133 @@
+---
+editor_options:
+  markdown:
+    wrap: 72
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r,include=FALSE}
+knitr::opts_chunk$set(digits.signif = 4, tidy = TRUE, tidy.opts=list(blank = FALSE, warning = FALSE), message = TRUE, echo = TRUE, width='80%', widt.cutoff = '80')
+```
+
+# S&P 500 Top 50 Components by Market Cap
+
+```{r,include=FALSE}
+library(janitor)
+library(gridExtra)
+library(grid)
+library(broom)
+library(cluster)
+library(tidyverse)
+
+library(plotly)
+library(ggplot2)
+
+library(factoextra)
+library(xts)
+library(TTR)
+library(quantmod)
+library(dplyr)
+library(yfR)
+library(rvest)
+library(knitr)
+library(tidyquant)
+library(purrr)
+library(writexl)
+library(tidyr)
+library(knitr)
+library(dplyr)
+library(timeR)
+conflicted::conflict_prefer("mutate", "dplyr")
+conflicted::conflict_prefer("filter", "dplyr")
+conflicted::conflict_prefer("lag", "dplyr")
+library(rcartocolor)
+nColor <- 12
+ticker_colors <- carto_pal(12, "Safe")
+ticker_colors <- c("#88CCEE", "#CC6677", "#DDCC77" ,"#117733", "#332288" ,"#AA4499","#999933" ,"#44AA99", "#882255", "#6699CC", "#888888")
+
+```
+
+```{r, eval=FALSE}
+top50_symbol = c("AAPL", "NVDA", "MSFT", "AMZN", "META", "GOOGL", "BRK-B","AVGO", 
+             "GOOG", "LLY", "JPM", "TSLA", "XOM", "UNH", "V", "MA", "HD", "PG", 
+             "COST", "JNJ", "WMT", "NFLX", "ABBV", "CRM", "BAC", "ORCL", "MRK", 
+             "KO", "CVX", "AMD", "PEP", "ACN", "LIN", "CSCO", "TMO", "MCD", 
+             "ADBE", "WFC", "IBM", "GE", "ABT", "CAT", "NOW", "QCOM", "PM", 
+             "ISRG", "VZ", "TXN", "DIS", "DHR")
+```
+
+```{r, eval=FALSE}
+pull_stock_data <- function(symbol) {
+  stock_data <- tryCatch({
+    tq_get(top50_symbol, from = "2022-12-31") %>%
+      as.data.frame() %>% 
+      mutate(daily_return = (adjusted / lag(adjusted) - 1) * 100) %>% na.omit()
+  }, error = function(e) {
+    return(NULL)
+  })
+  
+  
+  return(stock_data)
+}
+```
+
+```{r, eval=FALSE,warning=FALSE}
+timer <- createTimer(precision = "ms") 
+timer$start("e")
+
+data <- pull_stock_data(top50_symbol)
+
+timer$stop("e")
+
+stock_data_list <- split(data, data$symbol)
+
+
+write_xlsx(stock_data_list, "stock_data_by_company.xlsx")
+
+
+
+timer$getTimeElapsed("e")
+
+```
+
+
+```{r}
+url <- 'https://www.slickcharts.com/sp500'
+
+mkt_share <- url %>%
+  read_html() %>% 
+  html_table(fill = TRUE, trim = TRUE)
+
+company_holdings <- mkt_share[[1]] %>% janitor::clean_names()  %>% transform(symbol = str_replace_all(symbol, "[.]", "-")) %>%na.omit()
+
+market_cap <- company_holdings %>% select(c(2:5)) %>%   transform(weight = readr::parse_number(weight)) %>% rename("mkt_holding_weight" = "weight", "mkt_holding_price"="price", "security" = "company")
+
+head(market_cap)
+
+write_csv(market_cap,"market_cap.csv",col_names = TRUE)
+```
+
+
+```{r}
+library(readxl)
+library(openxlsx)
+component <- read_excel("../coursework/asgmt2/market_cap.xlsx")
+company <- read.csv("data/sp500_company_current.csv")
+
+
+comp_full <- company %>% left_join(component, by = "symbol") %>% mutate(price = as.numeric(price), date_added = as.Date(date_added)) %>% select(-c("cik","company")) %>% rename("sector"="gics_sector", "sub_industry" = "gics_sub_industry")
+
+write.csv(comp_full,"company_data_full.csv")
+write.xlsx(comp_full, file = "company_data_full.xlsx")
+
+head(comp_full)
+```
+
+Total S&P 500 Market Capitalization
+
+\$49.087 trillion
+
+As of 2024-10-23
