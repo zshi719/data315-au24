@@ -91,5 +91,7 @@ write_xlsx(stock_data_list, "stock_data_by_company.xlsx")
 
 timer$getTimeElapsed("e")
 
+
+
 ```
 
