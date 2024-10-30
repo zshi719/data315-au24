@@ -103,14 +103,16 @@ Thursday - Animated transitions activity
 
 - **Assignment 2 due October 31!**
 
-### Week 6: Narrative visualization
+### Week 6: Communicative data representation
 
-Tuesday - Data storytelling 
+Tuesday - Narrivative visualization and storytelling 
 
 - begin Assignment 3
 - read: [Narrative Visualization: Telling Stories with Data](http://vis.stanford.edu/files/2010-Narrative-InfoVis.pdf), [Communicating with Interactive Articles](https://distill.pub/2020/communicating-with-interactive-articles/)
 
-Thursday - Svelte Scrolly demo
+Thursday - Accessibility and non-visual modalities
+
+- read: [Accessible Visualization via Natural Language Descriptions: A Four-Level Model of Semantic Content](https://vis.csail.mit.edu/pubs/vis-text-model/), [Chartability](https://chartability.fizz.studio/)
 
 ### Week 7: Rhetorical visualization
 
