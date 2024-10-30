@@ -1,0 +1,154 @@
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(stringr)
+
+
+# Clean and abbreviate the sub_industry column
+data <- company_data_full %>%
+  mutate(sub_industry = str_replace_all(sub_industry, " & ", " ")) %>% # Remove ampersands for conciseness
+  mutate(sub_industry = str_replace_all(sub_industry, " and ", " ")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Equipment", "Equip")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Technology", "Tech")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Services", "Svc")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Products", "Prod")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Industries", "Ind")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Producers", "Prod")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Distributors", "Distr")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Commercial", "Comml")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Retailers", "Retail")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Materials", "Mtrl")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Management", "Mgmt")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Energy", "Enrg")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Insurance", "Ins")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Financials", "Fin"))
+```
+
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(stringr)
+
+# Load the data
+data <- read.csv("company_data_cleaned.csv")
+# Load necessary libraries
+library(dplyr)
+library(stringr)
+
+
+# Abbreviate the sub_industry column, focusing on REITs
+data <- data %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Office REITs", "Office Real Estate Investment Trust (REIT)")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Industrial REITs", "Industrial REIT")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Retail REITs", "Retail REIT")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Residential REITs", "Residential REIT")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Specialized REITs", "Specialized REIT")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Mortgage REITs", "Mortgage REIT")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Health Care REITs", "Health REIT")) %>%
+  
+  # Other abbreviations from previous code
+  mutate(sub_industry = str_replace_all(sub_industry, "Interactive Media & Services", "Interactive Media")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Movies & Entertainment", "Movies")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Broadcasting", "Broadcast")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Advertising", "Ads")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Cable & Satellite", "Cable")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Integrated Telecommunication Services", "Telecom")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Interactive Home Entertainment", "Home Ent")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Publishing", "Publish")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Wireless Telecommunication Services", "Wireless")) %>%
+  
+  # Consumer Discretionary
+  mutate(sub_industry = str_replace_all(sub_industry, "Hotels, Resorts & Cruise Lines", "Hotels")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Apparel, Accessories & Luxury Goods", "Luxury Goods")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Automobile Manufacturers", "Auto Mfrs")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Automotive Retail", "Auto Retail")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Automotive Parts & Equipment", "Auto Parts")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Homebuilding", "Homebuild")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Apparel Retail", "Apparel")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Broadline Retail", "Retail")) %>%
+  
+  # Information Technology
+  mutate(sub_industry = str_replace_all(sub_industry, "IT Consulting & Other Services", "IT Consulting")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Application Software", "App Software")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Semiconductors", "Semis")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Electronic Equipment & Instruments", "Elec Equip")) %>%
+  
+  # Health Care
+  mutate(sub_industry = str_replace_all(sub_industry, "Health Care Equipment", "Health Equip")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Life Sciences Tools & Services", "Life Sci Tools")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Health Care Supplies", "Health Supplies")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Biotechnology", "Biotech")) %>%
+  
+  # Financials
+  mutate(sub_industry = str_replace_all(sub_industry, "Property & Casualty Insurance", "P&C Ins")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Life & Health Insurance", "Life & Health Ins")) %>%
+  
+  # Utilities
+  mutate(sub_industry = str_replace_all(sub_industry, "Independent Power Producers & Energy Traders", "Power Producers")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Electric Utilities", "Elec Utilities")) %>%
+  
+  # Materials
+  mutate(sub_industry = str_replace_all(sub_industry, "Specialty Chemicals", "Spec Chemicals")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Industrial Gases", "Ind Gases"))
+
+
+write.csv(data, "company_data_sub_industry_abbreviated_REITs.csv", row.names = FALSE)
+```
+
+
+```{r}
+# Abbreviate the sub_industry column
+data <- data %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Interactive Media & Services", "Interactive Media")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Movies & Entertainment", "Movies")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Broadcasting", "Broadcast")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Advertising", "Ads")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Cable & Satellite", "Cable")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Integrated Telecommunication Services", "Telecom")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Interactive Home Entertainment", "Home Ent")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Publishing", "Publish")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Wireless Telecommunication Services", "Wireless")) %>%
+  
+  # Consumer Discretionary
+  mutate(sub_industry = str_replace_all(sub_industry, "Hotels, Resorts & Cruise Lines", "Hotels")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Apparel, Accessories & Luxury Goods", "Luxury Goods")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Automobile Manufacturers", "Auto Manufacturers")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Automotive Retail", "Auto Retail")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Automotive Parts & Equipment", "Auto Parts")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Homebuilding", "Homebuild")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Apparel Retail", "Apparel")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Broadline Retail", "Retail")) %>%
+  
+  # Information Technology
+  mutate(sub_industry = str_replace_all(sub_industry, "IT Consulting & Other Services", "IT Consulting")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Application Software", "App Software")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Semiconductors", "Semis")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Electronic Equipment & Instruments", "Elec Equip")) %>%
+  
+  # Health Care
+  mutate(sub_industry = str_replace_all(sub_industry, "Health Care Equipment", "Health Equip")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Life Sciences Tools & Services", "Life Sci Tools")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Health Care Supplies", "Health Supplies")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Biotechnology", "Biotech")) %>%
+  
+  # Financials
+  mutate(sub_industry = str_replace_all(sub_industry, "Property & Casualty Insurance", "Property & Casualty Ins")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Life & Health Insurance", "Life & Health Ins")) %>%
+  
+  # Utilities
+  mutate(sub_industry = str_replace_all(sub_industry, "Independent Power Producers & Energy Traders", "Power Producers")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Electric Utilities", "Elec Utilities")) %>%
+  
+  # Materials
+  mutate(sub_industry = str_replace_all(sub_industry, "Specialty Chemicals", "Spec Chemicals")) %>%
+  mutate(sub_industry = str_replace_all(sub_industry, "Industrial Gases", "Ind Gases"))
+
+# Save the cleaned data if needed
+write.csv(data, "~/GithubProject/cartography/public/company_data_full.csv", row.names = FALSE)
+
+rename(data$market_cap_weight...)
+```
+
+
+

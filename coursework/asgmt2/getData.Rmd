@@ -114,7 +114,7 @@ write_csv(market_cap,"market_cap.csv",col_names = TRUE)
 ```{r}
 library(readxl)
 library(openxlsx)
-component <- read_excel("../coursework/asgmt2/market_cap.xlsx")
+
 company <- read.csv("data/sp500_company_current.csv")
 
 
