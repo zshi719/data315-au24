@@ -101,6 +101,8 @@ Tuesday - Interaction and animation
 
 Thursday - Animated transitions activity
 
+- read: [Designing Animated Transitions to Convey Aggregate Operations](https://idl.cs.washington.edu/files/2019-AnimatedAggregates-EuroVis.pdf)
+
 - **Assignment 2 due October 31!**
 
 ### Week 6: Communicative data representation
