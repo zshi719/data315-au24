@@ -18,9 +18,9 @@
     let yAxis;
 
     const brush = d3.brushX()
-        .extent([[0, 0], [chartW, chartH]])
-        .on("brush", brushed)
-        .on("end", brushended);        
+                    .extent([[0, 0], [chartW, chartH]])
+                    .on("brush", brushed)
+                    .on("end", brushended);
 
     function brushed(event) {
         if (event && event.selection) {
@@ -37,55 +37,55 @@
     }
 
     $: xScale = d3.scaleLinear()
-        .range([0, chartW])
-        .domain(d3.extent(fullData.map((d) => d.properties[variable])));
+                  .range([0, chartW])
+                  .domain(d3.extent(fullData.map((d) => d.properties[variable])));
     $: binData = d3.histogram()
-        .value((d) => d.properties[variable])
-        .domain(xScale.domain())
-        .thresholds(xScale.ticks(30));
+                   .value((d) => d.properties[variable])
+                   .domain(xScale.domain())
+                   .thresholds(xScale.ticks(30));
     $: backgroundBins = binData(fullData);
     $: bins = binData(data);
     $: yScale = d3.scaleLinear()
-        .range([chartH, 0])
-        .domain([0, d3.max(backgroundBins, (d) => d.length)]);
-    $: {	
-            d3.select(brushLayer)
-                .call(brush);
-            d3.select(xAxis)
-                .call(d3.axisBottom(xScale));
-            d3.select(yAxis)
-                .call(d3.axisLeft(yScale));
-        }
+                  .range([chartH, 0])
+                  .domain([0, d3.max(backgroundBins, (d) => d.length)]);
+    $: {
+        d3.select(brushLayer)
+          .call(brush);
+        d3.select(xAxis)
+          .call(d3.axisBottom(xScale));
+        d3.select(yAxis)
+          .call(d3.axisLeft(yScale));
+    }
 </script>
 
 <main>
-    <svg {width} {height}>
+    <svg {height} {width}>
         <g transform="translate({margin.left}, {margin.top})">
             {#each backgroundBins as d}
-                <rect class = "backgroundbar"
-                    x={xScale(d.x0)} 
-                    y={yScale(d.length)}
-                    width={xScale(d.x1) - xScale(d.x0)}
-                    height={chartH - yScale(d.length)}/>
+                <rect class="backgroundbar"
+                      x={xScale(d.x0)}
+                      y={yScale(d.length)}
+                      width={xScale(d.x1) - xScale(d.x0)}
+                      height={chartH - yScale(d.length)}/>
             {/each}
             {#each bins as d}
-                <rect class = "bar"
-                    x={xScale(d.x0)} 
-                    y={yScale(d.length)}
-                    width={xScale(d.x1) - xScale(d.x0)}
-                    height={chartH - yScale(d.length)}/>
+                <rect class="bar"
+                      x={xScale(d.x0)}
+                      y={yScale(d.length)}
+                      width={xScale(d.x1) - xScale(d.x0)}
+                      height={chartH - yScale(d.length)}/>
             {/each}
         </g>
 
-        <g transform="translate({margin.left}, {margin.top})"
-            bind:this={brushLayer} />
-       
-        <g transform="translate({margin.left}, {chartH + margin.top})" 
-            bind:this={xAxis} />
+        <g bind:this={brushLayer}
+           transform="translate({margin.left}, {margin.top})"/>
 
-        <g transform="translate({margin.left}, {margin.top})"
-            bind:this={yAxis} />
-      </svg>
+        <g bind:this={xAxis}
+           transform="translate({margin.left}, {chartH + margin.top})"/>
+
+        <g bind:this={yAxis}
+           transform="translate({margin.left}, {margin.top})"/>
+    </svg>
 </main>
 
 <style>
@@ -98,4 +98,4 @@
     .backgroundbar {
         fill: grey;
     }
- </style>
+</style>
