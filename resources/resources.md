@@ -39,11 +39,13 @@ This is where we will share links to tutorials, examples, and programming tools.
 - Brush up on your [HTML](https://www.w3schools.com/tags/default.asp), [CSS](https://www.w3schools.com/css/), and [JavaScript](https://www.w3schools.com/js/) at the start of the quarter. If these are unfamiliar, this class might be difficult.
 - [Svelte](https://svelte.dev/) is the primary JavaScript framework we will use in this class. Check out their wonderful [tutorial](https://learn.svelte.dev/) to get started. If you prefer [React](https://react.dev/) or similar, you are welcome to use it.
 - We are going to use Svelte with D3 as demonstrated in these [materials from MIT](https://vis-society.github.io/lectures/intro-svelte-d3.html)'s vis curriculum. Check it out to get a head start on the way we are learning web development in this course!
+- Importing the [Scrolly](https://svelte.dev/playground/d806d5f6e300426ab4af317d9e1d0cb3?version=3.42.4) Svelte Component is helpful for implementing data stories.
 
 ## Demos and videos
 
 - Interactive [scatterplot matrix](https://vega.github.io/vega/examples/brushing-scatter-plots/)
 - Hans Rosling's [visualization storytelling](https://www.youtube.com/watch?v=hVimVzgtD6w)
+- [Making PDFs Accessible](https://ieeevis.org/year/2024/info/call-participation/make-pdf-accessible)
 - Amanda Cox from the New York Times on [uncertainty visualizations in the news](https://www.youtube.com/watch?v=0L1tGo-DvD0) (2:55 – 10:43)
 - Fred Hohman's presentations about his work on [ML interpretability](https://fredhohman.com/dissertation/)
 
@@ -51,6 +53,7 @@ This is where we will share links to tutorials, examples, and programming tools.
 
 - An overview of [color schemes](https://observablehq.com/@d3/color-schemes) available in Altair.
 - The [ColorBrewer](https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3) tool for choosing color palettes.
+- [Color Buddy](https://color-buddy.netlify.app/)
 
 ## Map projections
 
