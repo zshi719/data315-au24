@@ -2,17 +2,27 @@
 editor_options:
   markdown:
     wrap: 72
+  echo: false
 output:
   html_document:
     df_print: paged
   pdf_document: default
+  
 ---
 
+
 ```{r,include=FALSE}
-knitr::opts_chunk$set(digits.signif = 4, tidy = TRUE, tidy.opts=list(blank = FALSE, warning = FALSE), message = TRUE, echo = TRUE, width='80%', widt.cutoff = '80')
+library(ggmap)
+library(dplyr)
+register_google(key = "AIzaSyD3wR5ZmNZmv36w-LbmWixO5JKYmdWRtoI")
+```
+
+```{r}
+knitr::opts_chunk$set(digits.signif = 4, tidy = TRUE, tidy.opts=list(blank = FALSE, warning = FALSE), message = TRUE, echo = TRUE,eval=FALSE, width='80%', widt.cutoff = '80')
 ```
 
 # S&P 500 Top 50 Components by Market Cap
+
 
 ```{r,include=FALSE}
 library(janitor)
@@ -48,15 +58,14 @@ nColor <- 12
 ticker_colors <- carto_pal(12, "Safe")
 ticker_colors <- c("#88CCEE", "#CC6677", "#DDCC77" ,"#117733", "#332288" ,"#AA4499","#999933" ,"#44AA99", "#882255", "#6699CC", "#888888")
 
-```
 
-```{r, eval=FALSE}
 top50_symbol = c("AAPL", "NVDA", "MSFT", "AMZN", "META", "GOOGL", "BRK-B","AVGO", 
              "GOOG", "LLY", "JPM", "TSLA", "XOM", "UNH", "V", "MA", "HD", "PG", 
              "COST", "JNJ", "WMT", "NFLX", "ABBV", "CRM", "BAC", "ORCL", "MRK", 
              "KO", "CVX", "AMD", "PEP", "ACN", "LIN", "CSCO", "TMO", "MCD", 
              "ADBE", "WFC", "IBM", "GE", "ABT", "CAT", "NOW", "QCOM", "PM", 
              "ISRG", "VZ", "TXN", "DIS", "DHR")
+
 ```
 
 ```{r, eval=FALSE}
@@ -87,56 +96,34 @@ stock_data_list <- split(data, data$symbol)
 
 write_xlsx(stock_data_list, "stock_data_by_company.xlsx")
 
-
 ```
 
 
-```{r}
-```{r}
-# Load required libraries
-library(ggmap)
-library(dplyr)
-
-# Set up Google Maps API key (replace 'your_api_key' with your actual API key)
-register_google(key = "AIzaSyD3wR5ZmNZmv36w-LbmWixO5JKYmdWRtoI")
-
-# Function to get latitude and longitude
-get_lat_long <- function(address) {
-  result <- geocode(address, output = "latlona", source = "google")
-  return(result)
-}
-
-# Add a full address column to the 'current' data for geocoding
-current <- current %>%
-  mutate(full_address = paste(headquarters_location, "USA", sep = ", "))
-
-# Fetch latitude and longitude for each company's headquarters
-current <- current %>%
-  rowwise() %>%
-  mutate(geo_data = list(get_lat_long(full_address))) %>%
-  mutate(latitude = geo_data$lat, longitude = geo_data$lon) %>%
-  select(-geo_data)
-
-# Print the updated dataset with latitude and longitude
-print(head(current))
-
-```
-
 
 ```{r}
-# Load required libraries
-library(ggmap)
-library(dplyr)
 current <- read.csv("data/company_data_full.csv")
-head(data)
+get_lat_long <- function(address) {
+  result <- geocode(address, output = "latlona", source = "google")
+  return(result)
+}
+
+current <- current %>%
+  mutate(full_address = paste(headquarters_location, "USA", sep = ", "))
+
+current <- current %>%
+  rowwise() %>%
+  mutate(geo_data = list(get_lat_long(full_address))) %>%
+  mutate(latitude = geo_data$lat, longitude = geo_data$lon) %>%
+  select(-geo_data)
+
+# Print the updated dataset with latitude and longitude
+print(head(current))
 ```
 
 
-```{r}
-# Set up Google Maps API key (replace 'your_api_key' with your actual API key)
-register_google(key = "AIzaSyD3wR5ZmNZmv36w-LbmWixO5JKYmdWRtoI")
+## fetch CITY geocodes
+```{r,}
 
-# Function to get latitude and longitude
 get_lat_long <- function(address) {
   result <- geocode(address, output = "latlona", source = "google")
   return(result)
@@ -153,9 +140,146 @@ current <- current %>%
   mutate(latitude = geo_data$lat, longitude = geo_data$lon) %>%
   select(-geo_data)
 
-# Print the updated dataset with latitude and longitude
-print(head(current))
+write_xlsx(current, "current_new.xlsx")
+write_csv(current, "data/current_new.csv")
+```
+
+## fetch headquarters HQ geocodes
+
+```{r}
+data <- read.csv("data/current_new.csv")
+
+
+get_hq_geocoding <- function(company_name, headquarters) {
+  # Combine company name and headquarters location for query
+  query <- paste(company_name, headquarters, sep = ", ")
+  tryCatch({
+    # Fetch geocode data
+    result <- geocode(query, output = "latlona", source = "google")
+    return(data.frame(hq_lat = result$lat, hq_long = result$lon))
+  }, error = function(e) {
+    warning(paste("Failed to geocode:", query))
+    return(data.frame(hq_lat = NA, hq_long = NA))  # Return NA for failed geocoding
+  })
+}
+
+
+data <- read.csv("data/current_new.csv", stringsAsFactors = FALSE)
+
+
+error_log <- data.frame(company_name = character(), headquarters = character(), error_message = character())
+
+# Apply geocoding function to each row
+data <- data %>%
+  rowwise() %>%
+  mutate(
+    hq_result = list(get_hq_geocoding(security, headquarters_location)),
+    hq_lat = hq_result$hq_lat,
+    hq_long = hq_result$hq_long
+  ) %>%
+  select(-hq_result)
+
+# Log errors (rows with NA for hq_lat or hq_long)
+error_log <- data %>%
+  filter(is.na(hq_lat) | is.na(hq_long)) %>%
+  select(security, headquarters_location) %>%
+  mutate(error_message = "Failed to fetch HQ coordinates")
+
+# Save error log for review
+write.csv(error_log, "data/error_log.csv", row.names = FALSE)
+
+# Save the updated dataset with HQ coordinates
+write.csv(data, "data/current_new_with_hq_coords.csv", row.names = FALSE)
+```
+
+```{r,}
+
+get_hq_geocoding2 <- function(company_name, headquarters) {
+  # Combine company name and headquarters location for query
+  query <- paste(company_name, headquarters, sep = ", ")
+  tryCatch({
+    # Fetch geocode data
+    result <- geocode(query, output = "latlona", source = "google")
+    return(data.frame(hq_lat = result$lat, hq_long = result$lon, query = query))
+  }, error = function(e) {
+    warning(paste("Failed to geocode:", query))
+    return(data.frame(hq_lat = NA, hq_long = NA, query = query))  # Return NA for failed geocoding
+  })
+}
+
+
+data <- read.csv("data/current_new.csv", stringsAsFactors = FALSE)
+
+
+error_log <- data.frame(company_name = character(), headquarters = character(), error_message = character())
+
+
+data <- data %>%
+  rowwise() %>%
+  mutate(
+    geocode_result = list(get_hq_geocoding2(security, headquarters_location)),
+    hq_lat = geocode_result$hq_lat,
+    hq_long = geocode_result$hq_long,
+    query = geocode_result$query
+  ) %>%
+  ungroup() %>%
+  select(-geocode_result)  # Remove intermediate results
+
+# Log errors (rows with NA for hq_lat or hq_long)
+error_log <- data %>%
+  filter(is.na(hq_lat) | is.na(hq_long)) %>%
+  select(security, headquarters_location, query) %>%
+  mutate(error_message = "Failed to fetch HQ coordinates")
+
+
+write.csv(error_log, "data/error_log.csv", row.names = FALSE)
+write.csv(data, "data/current_new_with_hq_coords.csv", row.names = FALSE)
 
 ```
+
+```{r,}
+get_hq_geocoding <- function(company_name, headquarters) {
+  # Combine company name and headquarters location
+  query <- paste(company_name, headquarters, "USA", sep = ", ")
+  tryCatch({
+    # Fetch geocode data
+    result <- geocode(query, output = "latlona", source = "google")
+    if (is.na(result$lat) | is.na(result$lon)) {
+      stop("Geocoding failed or returned ambiguous result")
+    }
+    return(data.frame(hq_lat = result$lat, hq_long = result$lon, query = query))
+  }, error = function(e) {
+    warning(paste("Failed to geocode:", query))
+    return(data.frame(hq_lat = NA, hq_long = NA, query = query))  # Return NA for failed geocoding
+  })
+}
+
+data <- read.csv("data/current_new.csv", stringsAsFactors = FALSE)
+
+
+data <- data %>%
+  rowwise() %>%
+  mutate(
+    geocode_result = list(get_hq_geocoding(security, headquarters_location)),
+    hq_lat = geocode_result$hq_lat,
+    hq_long = geocode_result$hq_long,
+    query = geocode_result$query
+  ) %>%
+  ungroup() %>%
+  select(-geocode_result)  # Remove intermediate results
+
+# Log errors (rows with NA for hq_lat or hq_long)
+error_log <- data %>%
+  filter(is.na(hq_lat) | is.na(hq_long)) %>%
+  select(security, headquarters_location, query) %>%
+  mutate(error_message = "Failed to fetch HQ coordinates")
+
+# Save error log for manual review
+write.csv(error_log, "data/error_log.csv", row.names = FALSE)
+
+# Save the updated dataset with HQ coordinates
+write.csv(data, "data/current_new_with_hq_coords.csv", row.names = FALSE)
+```
+
 
 

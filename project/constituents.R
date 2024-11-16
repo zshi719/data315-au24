@@ -6,7 +6,7 @@ library(openxlsx)
 library(tidyr)
 library(lubridate)
 
-```{r}
+
 # Load required libraries
 library(ggmap)
 library(dplyr)
