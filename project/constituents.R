@@ -6,21 +6,33 @@ library(openxlsx)
 library(tidyr)
 library(lubridate)
 
-final_tickers_by_year <- read_excel("~/Desktop/HistoricalComponents.xlsx")
+```{r}
+# Load required libraries
+library(ggmap)
+library(dplyr)
 
-df_last_entry_per_year <- final_tickers_by_year %>%
-  mutate(year = year(date)) %>%
-  group_by(year) %>%              # Group by year
-  filter(date == max(date)) %>%
-  ungroup()
+# Set up Google Maps API key (replace 'your_api_key' with your actual API key)
+register_google(key = "AIzaSyD3wR5ZmNZmv36w-LbmWixO5JKYmdWRtoI")
 
+# Function to get latitude and longitude
+get_lat_long <- function(address) {
+  result <- geocode(address, output = "latlona", source = "google")
+  return(result)
+}
 
-df_split <- df_last_entry_per_year %>% separate(tickers, into = paste0("", 1:505), sep = ",", fill = "right", extra = "drop")
+# Add a full address column to the 'current' data for geocoding
+current <- current %>%
+  mutate(full_address = paste(headquarters_location, "USA", sep = ", "))
 
-df_split$date <- as.Date(df_split$date, format = "%Y-%m-%d")
+# Fetch latitude and longitude for each company's headquarters
+current <- current %>%
+  rowwise() %>%
+  mutate(geo_data = list(get_lat_long(full_address))) %>%
+  mutate(latitude = geo_data$lat, longitude = geo_data$lon) %>%
+  select(-geo_data)
 
-# head(df_split)
+# Print the updated dataset with latitude and longitude
+print(head(current))
 
-write.csv(df_split, "data/constituents.csv")
-
+```
 
