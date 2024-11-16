@@ -14,6 +14,7 @@ output:
 ```{r,include=FALSE}
 library(ggmap)
 library(dplyr)
+setwd("~/GithubProject/data315-au24/project")
 register_google(key = "AIzaSyD3wR5ZmNZmv36w-LbmWixO5JKYmdWRtoI")
 ```
 
@@ -283,3 +284,224 @@ write.csv(data, "data/current_new_with_hq_coords.csv", row.names = FALSE)
 
 
 
+```{r, warning=FALSE}
+setwd("~/GithubProject/data315-au24/project")
+library(dplyr)
+library(lubridate)
+library(skimr)
+library(dplyr)
+library(lubridate)
+library(skimr)
+library(ggplot2)
+library(tidyquant)
+library(rcartocolor)
+pal <- carto_pal(12, "Pastel")
+```
+
+
+```{r, warning=FALSE}
+sp500_data <- read.csv("data/sp500_company_latest.csv") %>% janitor::clean_names() %>% 
+  mutate(date_added = as.Date(date_added)) %>%
+  mutate(founded = as.Date(founded))
+head(sp500_data)
+```
+
+
+```{r, warning=FALSE}
+# print column names
+colnames(sp500_data)
+```
+
+
+```{r, echo=TRUE, warning=FALSE}
+
+
+sp500_grouped <- sp500_data %>%
+   arrange(date_added) %>%
+  mutate(year_added = year(date_added)) %>%
+  group_by(year_added) %>%
+  summarize(
+    companies = list(symbol),
+    details = list(data.frame(security, sector, sub_industry, headquarters_location))
+  )
+
+# plot the number of companies added to the S&P 500 each year
+sp500_grouped %>%
+  ggplot(aes(x = year_added, y = lengths(companies))) +
+  geom_bar(stat = "identity", fill = carto_pal(12, "Safe")[1]) +
+  labs(
+    title = "Number of Companies Added to the S&P 500 Each Year",
+    x = "Year",
+    y = "Number of Companies"
+  ) +
+  theme_tq()
+```
+
+
+```{r}
+# 每个行业选择故股票份额前10
+# Select the top N companies by market cap weight in each sector
+top_companies <- sp500_data %>%
+  group_by(sector) %>%
+  slice_max(order_by = market_cap_weight, n = 10) %>%  # Change n for more/less companies
+  ungroup()
+
+top_companies %>%
+  ggplot(aes(x = date_added, y = reorder(symbol, date_added))) +
+  geom_point(aes(color = sector), size = 2, position = position_jitter(width = 0.4, height = 0.2)) +
+  geom_text(aes(label = symbol), vjust = -0.5, size = 2) +
+  scale_color_manual(values = pal) +
+  labs(
+    title = "Demo: Timeline of Selected Companies by Date_added",
+    x = "Date Added",
+    y = "Ticker Symbol",
+    color = "Sector"
+  ) +
+  theme_minimal() +
+  theme(
+    # blank for y
+    axis.text.y = element_blank(),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "bottom"
+  )
+
+```
+
+```{r}
+# Filter top companies to label
+top_companies <- sp500_data %>%
+  group_by(sector) %>%
+  slice_max(order_by = market_cap_weight, n = 2) %>%  # Select top 3 by sector
+  ungroup()
+
+# Plot all companies as dots and label only selected ones
+sp500_data %>%
+  ggplot(aes(x = date_added, y = reorder(symbol, date_added))) +
+  # All companies as dots
+  geom_point(aes(color = sector), size = 2, alpha = 0.5) +
+  # Add labels for selected companies
+  geom_text(data = top_companies,
+            aes(label = symbol),
+            vjust = -1,
+            size = 2,
+            color = "black") +
+  scale_color_manual(values = pal) +
+  labs(
+    title = "Demo: Timeline of ALL Current S&P 5000 Companies with Selected Labels",
+    x = "Date Added",
+    y = "Ticker Symbol",
+    color = "Sector",
+    caption ="can turn this into an animation whereas users click on the dot and it will show the company details"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 1),
+    axis.text.y = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(size = 12, color = "blue"),
+    plot.margin = margin(10, 0, 0, 10),
+    # magenta for caption; and caption large font
+    plot.caption = element_text(color = "magenta", size = 12)
+  )
+
+
+```
+# History Problem
+```{r}
+library(dplyr)
+
+# Load the cleaned dataset with lat-long
+change_history <- read.csv("data/sp500_change_history.csv", stringsAsFactors = FALSE)
+head(change_history)
+geolocation_data <- read.csv("data/sp500_company_latest.csv", stringsAsFactors = FALSE)
+```
+```{r}
+# Load data
+library(dplyr)
+change_history <- read.csv("data/sp500_change_history.csv", stringsAsFactors = FALSE)
+
+# Convert date column to Date type
+change_history$date <- as.Date(change_history$date)
+
+# Extract changes for the target year (e.g., 2024)
+change_2024 <- change_history %>%
+  filter(format(date, "%Y") == "2024") %>%
+  arrange(date)
+
+# Ensure 'added_ticker' and 'removed_ticker' match 'symbol' in geolocation data
+change_history <- change_history %>%
+  left_join(geolocation_data, by = c("added_ticker" = "symbol")) %>%
+  rename(
+    added_hq_long = hq_long,
+    added_hq_lat = hq_lat
+  ) %>%
+  left_join(geolocation_data, by = c("removed_ticker" = "symbol")) %>%
+  rename(
+    removed_hq_long = hq_long,
+    removed_hq_lat = hq_lat
+  )
+
+# Added companies
+added_companies <- change_history %>%
+  filter(!is.na(added_ticker)) %>%
+  select(date, added_ticker, added_hq_long, added_hq_lat)
+
+# Removed companies
+removed_companies <- change_history %>%
+  filter(!is.na(removed_ticker)) %>%
+  select(date, removed_ticker, removed_hq_long, removed_hq_lat)
+
+
+```
+
+
+```{r}
+
+
+# Combine added and removed companies
+change_combined <- change_history %>%
+  mutate(
+    hq_long = ifelse(!is.na(added_ticker), geolocation_data$hq_long[match(added_ticker, geolocation_data$symbol)], 
+                     geolocation_data$hq_long[match(removed_ticker, geolocation_data$symbol)]),
+    hq_lat = ifelse(!is.na(added_ticker), geolocation_data$hq_lat[match(added_ticker, geolocation_data$symbol)], 
+                    geolocation_data$hq_lat[match(removed_ticker, geolocation_data$symbol)]),
+    change_type = ifelse(!is.na(added_ticker), "Added", "Removed")
+  )
+
+# Check for missing data
+change_combined <- change_combined %>% filter(!is.na(hq_long) & !is.na(hq_lat))
+
+ggplot(change_combined, aes(x = hq_long, y = hq_lat, color = change_type)) +
+  geom_point(size = 3) +
+  labs(
+    title = "S&P 500 Company Changes: Added and Removed",
+    subtitle = "Geographic distribution of changes",
+    x = "Longitude",
+    y = "Latitude",
+    color = "Change Type"
+  ) +
+  theme_minimal()
+
+# Add year and month columns for animation
+change_combined <- change_combined %>%
+  mutate(
+    year_month = format(as.Date(date), "%Y-%m")
+  )
+
+# Animated plot
+animated_plot <- ggplot(change_combined, aes(x = hq_long, y = hq_lat, color = change_type)) +
+  geom_point(size = 3) +
+  labs(
+    title = "S&P 500 Company Changes Over Time: Added and Removed",
+    subtitle = "Time: {closest_state}",
+    x = "Longitude",
+    y = "Latitude",
+    color = "Change Type"
+  ) +
+  theme_minimal() +
+  transition_states(year_month, transition_length = 1, state_length = 1) +
+  ease_aes('linear')
+
+animate(animated_plot, nframes = 100, fps = 10, width = 800, height = 600)
+
+```
