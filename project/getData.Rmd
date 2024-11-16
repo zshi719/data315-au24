@@ -456,8 +456,6 @@ removed_companies <- change_history %>%
 
 
 ```{r}
-
-
 # Combine added and removed companies
 change_combined <- change_history %>%
   mutate(
@@ -480,15 +478,18 @@ ggplot(change_combined, aes(x = hq_long, y = hq_lat, color = change_type)) +
     y = "Latitude",
     color = "Change Type"
   ) +
-  theme_minimal()
+  theme_tq()
+
+```
+
+
+```{r}
 
 # Add year and month columns for animation
 change_combined <- change_combined %>%
   mutate(
     year_month = format(as.Date(date), "%Y-%m")
   )
-
-# Animated plot
 animated_plot <- ggplot(change_combined, aes(x = hq_long, y = hq_lat, color = change_type)) +
   geom_point(size = 3) +
   labs(
@@ -501,7 +502,4 @@ animated_plot <- ggplot(change_combined, aes(x = hq_long, y = hq_lat, color = ch
   theme_minimal() +
   transition_states(year_month, transition_length = 1, state_length = 1) +
   ease_aes('linear')
-
-animate(animated_plot, nframes = 100, fps = 10, width = 800, height = 600)
-
 ```
