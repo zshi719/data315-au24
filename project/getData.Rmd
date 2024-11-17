@@ -503,3 +503,76 @@ animated_plot <- ggplot(change_combined, aes(x = hq_long, y = hq_lat, color = ch
   transition_states(year_month, transition_length = 1, state_length = 1) +
   ease_aes('linear')
 ```
+
+
+```{r}
+library(ggplot2)
+library(gganimate)
+library(dplyr)
+
+# Prepare the data
+added <- change_history %>%
+  select(date, added_ticker, added_security) %>%
+  mutate(change_type = "Added", symbol = added_ticker, company = added_security)
+
+removed <- change_history %>%
+  select(date, removed_ticker, removed_security) %>%
+  mutate(change_type = "Removed", symbol = removed_ticker, company = removed_security)
+
+# Combine added and removed datasets
+combined_changes <- bind_rows(added, removed)
+
+# Convert date to a proper Date format
+combined_changes <- combined_changes %>%
+  mutate(date = as.Date(date, format = "%Y-%m-%d"))
+
+# Add placeholder lat/long data if missing (ensure geolocation data is included in your actual dataset)
+# Replace with actual hq_long, hq_lat if available
+combined_changes <- combined_changes %>%
+  left_join(geolocation_data, by = c("symbol" = "symbol")) %>%
+  filter(!is.na(hq_long), !is.na(hq_lat))
+
+# Order by time
+combined_changes <- combined_changes %>%
+  arrange(date)
+
+
+# Order by time
+combined_changes <- combined_changes %>%
+  arrange(date)
+
+# Define the color palette (using your `pal`)
+library(rcartocolor)
+pal <- carto_pal(12, "Pastel")
+
+# Plot with ggplot2 and gganimate
+p <- ggplot(combined_changes, aes(
+  x = hq_long,
+  y = hq_lat,
+  color = change_type,
+  label = company
+)) +
+  geom_point(size = 3, alpha = 0.8) +
+  scale_color_manual(values = c("Added" = pal[1], "Removed" = pal[2])) + # Use `pal` for colors
+  labs(
+    title = "S&P 500 Company Changes: {frame_time}",
+    subtitle = paste("Added =", pal[1], ", Removed =", pal[2]), # Display color names dynamically
+    x = "Longitude",
+    y = "Latitude",
+    color = "Change Type"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 14)
+  ) +
+  transition_time(date) +
+  ease_aes('linear')
+
+# Add interactive labels with gganimate and save the animation
+animated_plot <- animate(p, nframes = 100, fps = 10, width = 800, height = 600)
+# save mp4 file
+anim_save("sp500_changes.mp4", animation = animated_plot)
+```
+
