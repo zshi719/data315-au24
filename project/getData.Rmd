@@ -552,11 +552,306 @@ p <- ggplot(combined_changes, aes(
   color = change_type,
   label = company
 )) +
-  geom_point(size = 3, alpha = 0.8) +
-  scale_color_manual(values = c("Added" = pal[1], "Removed" = pal[2])) + # Use `pal` for colors
+  geom_point(size = 4, alpha = 0.8) +
+  scale_color_manual(values = c("Added" = "royalblue", "Removed" = "hotpink")) + # Use `pal` for colors
   labs(
     title = "S&P 500 Company Changes: {frame_time}",
-    subtitle = paste("Added =", pal[1], ", Removed =", pal[2]), # Display color names dynamically
+    subtitle = paste("Company Added", "royalblue", "Company Removed", "hotpink"),
+    x = "Longitude",
+    y = "Latitude",
+    color = "Change Type"
+  ) +
+  geom_text(aes(label = company), size = 4, hjust = -0.5, vjust = 0.5, position = position_jitter(width = 0.5, height = 0.5))+
+  theme_tq() +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 14)
+  ) +
+  transition_time(date) +
+  ease_aes('linear')
+
+
+# Save the animation as an MP4 video
+animated_plot <- animate(
+  p,
+  nframes = 100, 
+  fps = 10, 
+  width = 800, 
+  height = 600, 
+  renderer = av_renderer("sp500_changes.mp4") # Save as MP4
+)
+
+# Optionally, you can also use `anim_save` to save it again
+anim_save("multimedia/sp500_changes.mp4", animation = animated_plot)
+
+
+```
+```{r}
+# Prepare the data
+added <- change_history %>%
+  select(date, added_ticker, added_security) %>%
+  mutate(change_type = "Added", symbol = added_ticker, company = added_security)
+
+removed <- change_history %>%
+  select(date, removed_ticker, removed_security) %>%
+  mutate(change_type = "Removed", symbol = removed_ticker, company = removed_security)
+
+# Combine added and removed datasets
+combined_changes <- bind_rows(added, removed)
+
+# Convert date to a proper Date format
+combined_changes <- combined_changes %>%
+  mutate(date = as.Date(date, format = "%Y-%m-%d"))
+
+# Merge with geolocation data
+combined_changes <- combined_changes %>%
+  left_join(geolocation_data, by = c("symbol" = "symbol")) %>%
+  filter(!is.na(hq_long), !is.na(hq_lat)) # Filter valid coordinates
+
+# Ensure `market_cap_usd` is numeric
+combined_changes <- combined_changes %>%
+  mutate(
+    market_cap_usd = as.numeric(market_cap_usd), # Convert to numeric
+    market_cap_usd = ifelse(is.na(market_cap_usd), 0, market_cap_usd) # Replace NA with 0
+  )
+
+# Order by time
+combined_changes <- combined_changes %>%
+  arrange(date)
+```
+
+
+```{r}
+# Plot with ggplot2 and gganimate
+p <- ggplot(combined_changes, aes(
+  x = hq_long,
+  y = hq_lat,
+  color = change_type,
+  label = paste0(
+    "Company: ", company, "\n",
+    "Sector: ", sector, "\n",
+    "Market Cap: $", round(market_cap_usd, 1), "B\n",
+    "HQ: ", headquarters_location
+  )
+)) +
+  geom_point(size = 4, alpha = 0.8) +
+  geom_text(
+    aes(label = company),
+    size = 3, hjust = -0.5, vjust = 0.5,
+    position = position_jitter(width = 0.3, height = 0.3)
+  ) +
+  scale_color_manual(values = c("Added" = "royalblue", "Removed" = "hotpink")) + # Custom colors
+  labs(
+    title = "S&P 500 Company Changes: {frame_time}",
+    subtitle = "Dynamic view of Added (royalblue) and Removed (hotpink) Companies",
+    x = "Longitude",
+    y = "Latitude",
+    color = "Change Type"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 14),
+    axis.title = element_text(size = 12),
+    plot.caption = element_text(size = 10)
+  ) +
+  transition_time(date) +
+  ease_aes('linear')
+
+# Save the animation as an MP4 video
+animated_plot <- animate(
+  p,
+  nframes = 100,
+  fps = 10,
+  width = 800,
+  height = 600,
+  renderer = av_renderer("sp500_changes_with_info.mp4") # Save as MP4
+)
+
+# Optionally, save the animation again
+anim_save("multimedia/sp500_changes_with_info.mp4", animation = animated_plot)
+
+```
+
+```{r}
+# Plot with ggplot2 and gganimate
+p <- ggplot(combined_changes, aes(
+  x = hq_long,
+  y = hq_lat,
+  color = change_type
+)) +
+  geom_point(size = 4, alpha = 0.8) +
+  geom_text(
+    aes(
+      label = paste0(
+        "Company: ", company, "\n",
+        "Sector: ", sector, "\n",
+        "Market Cap: $", round(market_cap_usd, 1), "B\n",
+        "HQ: ", headquarters_location
+      )
+    ),
+    size = 3,
+    hjust = -0.5,
+    vjust = 0.5,
+    position = position_jitter(width = 0.5, height = 0.5)
+  ) +
+  scale_color_manual(values = c("Added" = "royalblue", "Removed" = "hotpink")) + # Custom colors
+  labs(
+    title = "S&P 500 Company Changes: {frame_time}",
+    subtitle = "Dynamic view of Added (royalblue) and Removed (hotpink) Companies",
+    x = "Longitude",
+    y = "Latitude",
+    color = "Change Type"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 14),
+    axis.title = element_text(size = 12),
+    plot.caption = element_text(size = 10)
+  ) +
+  transition_time(date) +
+  ease_aes('linear')
+
+# Save the animation as an MP4 video
+animated_plot <- animate(
+  p,
+  nframes = 100,
+  fps = 5,
+  width = 800,
+  height = 600,
+  renderer = av_renderer("sp500_changes_demo.mp4") # Save as MP4
+)
+
+# Optionally, save the animation again
+anim_save("multimedia/sp500_changes_demo2.mp4", animation = animated_plot)
+
+```
+
+```{r}
+# Plot with ggplot2 and gganimate
+p <- ggplot(combined_changes, aes(
+  x = hq_long,
+  y = hq_lat,
+  color = change_type
+)) +
+  geom_point(size = 4, alpha = 0.8) +
+  geom_text(
+    aes(
+      label = paste0(
+        "Company: ", company, "\n",
+        "Sector: ", sector, "\n",
+        "Market Cap: $", round(market_cap_usd, 1), "B\n",
+        "HQ: ", headquarters_location
+      )
+    ),
+    size = 3,
+    hjust = -0.5,
+    vjust = 0.5,
+    position = position_jitter(width = 0.5, height = 0.5)
+  ) +
+  scale_color_manual(values = c("Added" = "royalblue", "Removed" = "hotpink")) + # Custom colors
+  labs(
+    title = "S&P 500 Company Changes: {frame_time}",
+    subtitle = "Dynamic view of Added (royalblue) and Removed (hotpink) Companies",
+    x = "Longitude",
+    y = "Latitude",
+    color = "Change Type"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 14),
+    axis.title = element_text(size = 12),
+    plot.caption = element_text(size = 10)
+  ) +
+  transition_time(date) +
+  ease_aes('linear')
+```
+
+
+```{r}
+# Save the animation as an MP4 video
+animated_plot <- animate(
+  p,
+  nframes = 100,
+  fps = 5,
+  width = 800,
+  height = 600,
+  renderer = av_renderer("sp500_changes_demo.mp4") # Save as MP4
+)
+
+# Optionally, save the animation again
+anim_save("multimedia/sp500_changes_demo.mp4", animation = animated_plot)
+
+```
+
+
+```{r}
+library(ggplot2)
+library(gganimate)
+library(dplyr)
+library(maps)
+
+# Prepare the data
+added <- change_history %>%
+  select(date, added_ticker, added_security) %>%
+  mutate(change_type = "Added", symbol = added_ticker, company = added_security)
+
+removed <- change_history %>%
+  select(date, removed_ticker, removed_security) %>%
+  mutate(change_type = "Removed", symbol = removed_ticker, company = removed_security)
+
+# Combine added and removed datasets
+combined_changes <- bind_rows(added, removed)
+
+# Convert date to a proper Date format
+combined_changes <- combined_changes %>%
+  mutate(date = as.Date(date, format = "%Y-%m-%d"))
+
+# Join with geolocation data and ensure numeric data
+combined_changes <- combined_changes %>%
+  left_join(geolocation_data, by = c("symbol" = "symbol")) %>%
+  filter(!is.na(hq_long), !is.na(hq_lat)) %>%
+  mutate(
+    market_cap_usd = as.numeric(market_cap_usd), 
+    market_cap_usd = ifelse(is.na(market_cap_usd), 0, market_cap_usd)
+  ) %>%
+  arrange(date)
+
+# Map background data
+usa_map <- map_data("state")
+
+# Create the animation with a proper map background
+p <- ggplot() +
+  # Add the map background
+  geom_polygon(data = usa_map, aes(x = long, y = lat, group = group), 
+               fill = "gray95", color = "white") +
+  # Plot company changes
+  geom_point(data = combined_changes, aes(
+    x = hq_long,
+    y = hq_lat,
+    color = change_type,
+    size = market_cap_usd
+  ), alpha = 0.8) +
+  geom_text(data = combined_changes, aes(
+    x = hq_long,
+    y = hq_lat,
+    label = paste0(
+      "Company: ", company, "\n",
+      "Sector: ", sector, "\n",
+      "Market Cap: $", round(market_cap_usd, 1), "B"
+    )
+  ), size = 3, hjust = 0, vjust = 0, check_overlap = TRUE) +
+  scale_color_manual(values = c("Added" = "royalblue", "Removed" = "hotpink")) +
+  scale_size_continuous(range = c(2, 6), name = "Market Cap (B)") +
+  labs(
+    title = "S&P 500 Company Changes Over Time",
+    subtitle = "Timeline of Added (royalblue) vs Removed (hotpink)",
     x = "Longitude",
     y = "Latitude",
     color = "Change Type"
@@ -570,9 +865,350 @@ p <- ggplot(combined_changes, aes(
   transition_time(date) +
   ease_aes('linear')
 
-# Add interactive labels with gganimate and save the animation
-animated_plot <- animate(p, nframes = 100, fps = 10, width = 800, height = 600)
-# save mp4 file
-anim_save("sp500_changes.mp4", animation = animated_plot)
+# Save the animation
+animated_plot <- animate(
+  p,
+  nframes = 200,  # More frames for smoother animation
+  fps = 5,        # Slower playback
+  width = 1200,   # Wider plot for timeline
+  height = 800,   # Adjust height for better clarity
+  renderer = av_renderer("sp500_hist_map.mp4") # Save as MP4
+)
+
+# Optionally save again
+anim_save("multimedia/sp500_hist_map.mp4", animation = animated_plot)
+
 ```
+
+
+```{r}
+library(ggplot2)
+library(gganimate)
+library(dplyr)
+
+# Prepare the data
+added <- change_history %>%
+  select(date, added_ticker, added_security) %>%
+  mutate(change_type = "Added", symbol = added_ticker, company = added_security)
+
+removed <- change_history %>%
+  select(date, removed_ticker, removed_security) %>%
+  mutate(change_type = "Removed", symbol = removed_ticker, company = removed_security)
+
+# Combine added and removed datasets
+combined_changes <- bind_rows(added, removed)
+
+# Convert date to a proper Date format
+combined_changes <- combined_changes %>%
+  mutate(date = as.Date(date, format = "%Y-%m-%d"))
+
+# Join with geolocation data and ensure numeric data for market_cap_usd
+combined_changes <- combined_changes %>%
+  left_join(geolocation_data, by = c("symbol" = "symbol")) %>%
+  mutate(
+    market_cap_usd = as.numeric(market_cap_usd), # Ensure numeric
+    market_cap_usd = ifelse(is.na(market_cap_usd), 0, market_cap_usd) # Handle missing values
+  ) %>%
+  filter(!is.na(date)) %>%
+  arrange(date)
+
+# Create a timeline animation
+p <- ggplot(combined_changes, aes(
+  x = date,
+  y = change_type,
+  color = change_type,
+  label = company
+)) +
+  geom_point(size = 4, alpha = 0.8) +
+  geom_text(
+    aes(label = paste0(
+      "Company: ", company, "\n",
+      "Sector: ", sector, "\n",
+      "Market Cap: $", round(market_cap_usd, 1), "B"
+    )),
+    size = 3,
+    hjust = -0.3,
+    vjust = 0.5,
+    position = position_jitter(width = 0.3, height = 0.1)
+  ) +
+  scale_color_manual(values = c("Added" = "royalblue", "Removed" = "hotpink")) +
+  labs(
+    title = "S&P 500 Company Changes Over Time",
+    subtitle = "Timeline of Added (royalblue) vs Removed (hotpink)",
+    x = "Time",
+    y = "Change Type",
+    color = "Change Type"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 14),
+    axis.title = element_text(size = 12),
+    plot.caption = element_text(size = 10)
+  ) +
+  transition_reveal(date) +
+  ease_aes('linear')
+
+# Save the animation
+animated_plot <- animate(
+  p,
+  nframes = 200,  # More frames for smoother animation
+  fps = 5,        # Slower playback
+  width = 1200,   # Wider plot for timeline
+  height = 800,   # Adjust height for better clarity
+  renderer = av_renderer("sp500_timeline_demo.mp4") # Save as MP4
+)
+
+# Optionally save the animation again
+anim_save("multimedia/sp500_timeline_demo.mp4", animation = animated_plot)
+
+
+```
+
+```{r}
+library(ggplot2)
+library(gganimate)
+library(dplyr)
+library(maps)
+# Import required libraries
+library(ggplot2)
+library(gganimate)
+library(maps)
+
+# Ensure the necessary libraries are loaded
+library(ggplot2)
+library(gganimate)
+library(dplyr)
+library(maps)
+
+# Data Cleaning: Ensure `market_cap_usd` is numeric
+combined_changes <- combined_changes %>%
+  mutate(market_cap_usd = as.numeric(gsub("[$,]", "", market_cap_usd)))
+
+# Filter out rows with missing or invalid data
+combined_changes <- combined_changes %>%
+  filter(!is.na(market_cap_usd) & !is.na(company) & !is.na(date))
+
+# Define the timeline plot with labels and adjusted y-axis
+p <- ggplot(combined_changes, aes(
+  x = date,
+  y = reorder(company, date), # Company names on the y-axis
+  color = change_type,
+  size = market_cap_usd
+)) +
+  geom_point(alpha = 0.8) + # Plot points for each change
+  geom_text(
+    aes(label = paste0(
+      "Company: ", company, "\n",
+      "Sector: ", sector, "\n",
+      "Market Cap: $", round(market_cap_usd, 1), "B"
+    )),
+    size = 3,
+    hjust = -0.3,
+    vjust = 0.3,
+    color = "black",
+    check_overlap = TRUE
+  ) +
+  scale_color_manual(values = c("Added" = "royalblue", "Removed" = "hotpink")) +
+  scale_size_continuous(range = c(2, 6), name = "Market Cap (B)") +
+  scale_y_discrete() + # Ensure y-axis handles company names correctly
+  labs(
+    title = "S&P 500 Company Changes Over Time",
+    subtitle = "Added (royalblue) vs Removed (hotpink)",
+    x = "Timeline",
+    y = "Company",
+    color = "Change Type"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    panel.grid.major = element_line(color = "gray90"),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 14),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+  transition_time(date) +
+  ease_aes('linear')
+
+# Animate and save the animation as an MP4 video
+animated_plot <- animate(
+  p,
+  nframes = 200,  # Increase frames for smoother animation
+  fps = 5,        # Slower playback for demo clarity
+  width = 1200,
+  height = 800,
+  renderer = av_renderer("sp500_timeline_fixed.mp4") # Save as MP4
+)
+
+# Save the animation again if needed
+anim_save("multimedia/sp500_timeline_fixed.mp4", animation = animated_plot)
+
+```
+
+```{r}
+# Ensure required libraries are loaded
+library(ggplot2)
+library(gganimate)
+library(dplyr)
+
+# Data Cleaning: Ensure `market_cap_usd` is numeric
+combined_changes <- combined_changes %>%
+  mutate(market_cap_usd = as.numeric(gsub("[$,]", "", market_cap_usd)))
+
+# Filter out rows with missing or invalid data
+combined_changes <- combined_changes %>%
+  filter(!is.na(market_cap_usd) & !is.na(company) & !is.na(date))
+
+# Define the timeline plot
+timeline_plot <- ggplot(combined_changes, aes(
+  x = date,                          # Timeline on x-axis
+  y = reorder(company, date),        # Companies ordered by the date of change
+  color = change_type,               # Color represents "Added" or "Removed"
+  size = market_cap_usd              # Bubble size based on market cap
+)) +
+  geom_point(alpha = 0.8) +          # Add points for each change
+  geom_text(
+    aes(label = paste0(
+      "Company: ", company, "\n",
+      "Sector: ", sector, "\n",
+      "Market Cap: $", round(market_cap_usd, 1), "B"
+    )),
+    size = 3,
+    hjust = -0.3,
+    vjust = 0.3,
+    color = "black",
+    check_overlap = TRUE
+  ) +
+  scale_color_manual(values = c("Added" = "royalblue", "Removed" = "hotpink")) +
+  scale_size_continuous(range = c(2, 6), name = "Market Cap (B)") +
+  labs(
+    title = "S&P 500 Company Changes Over Time",
+    subtitle = "Added (royalblue) vs Removed (hotpink)",
+    x = "Date",
+    y = "Company",
+    color = "Change Type"
+  ) +
+  theme_minimal() +
+  theme(
+    # blank y
+    axis.text.y = element_blank(),
+    legend.position = "bottom",
+    panel.grid.major = element_line(color = "gray90"),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 14),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+  transition_reveal(date) +          # Animate points along the timeline
+  ease_aes('linear')
+
+# Save the animation as an MP4 video
+animated_timeline <- animate(
+  timeline_plot,
+  nframes = 200,  # Increase frames for smoother animation
+  fps = 10,        # Slower playback for clarity
+  width = 1200,
+  height = 800,
+  renderer = av_renderer("timeline_demo.mp4") # Save as MP4
+)
+
+# Optionally, you can also use `anim_save` to save it again
+anim_save("multimedia/timeline_demo.mp4", animation = animated_timeline)
+
+```
+
+```{r}
+# Ensure required libraries are loaded
+library(ggplot2)
+library(gganimate)
+library(dplyr)
+library(maps) # For the map data
+library(sf)   # For spatial map handling (if required)
+
+# Load US map data
+us_map <- map_data("state")
+
+# Data Cleaning: Ensure `market_cap_usd` is numeric
+combined_changes <- combined_changes %>%
+  mutate(market_cap_usd = as.numeric(gsub("[$,]", "", market_cap_usd)))
+
+# Filter out rows with missing or invalid data
+combined_changes <- combined_changes %>%
+  filter(!is.na(hq_long) & !is.na(hq_lat) & !is.na(market_cap_usd) & !is.na(company) & !is.na(date))
+
+# Define the map-based animation
+map_timeline_plot <- ggplot() +
+  # Add the US map as the background
+  geom_polygon(
+    data = us_map,
+    aes(x = long, y = lat, group = group),
+    fill = "gray95",
+    color = "gray70"
+  ) +
+  # Add company changes as points
+  geom_point(
+    data = combined_changes,
+    aes(
+      x = hq_long,              # Longitude for position
+      y = hq_lat,               # Latitude for position
+      color = change_type,      # Change type (Added or Removed)
+      size = market_cap_usd     # Bubble size based on market cap
+    ),
+    alpha = 0.8
+  ) +
+  # Add dynamic labels for companies
+  geom_text(
+    data = combined_changes,
+    aes(
+      x = hq_long,
+      y = hq_lat,
+      label = paste0(
+        "Company: ", company, "\n",
+        "Sector: ", sector, "\n",
+        "Market Cap: $", round(market_cap_usd, 1), "B"
+      )
+    ),
+    size = 3,
+    hjust = -0.1,
+    vjust = 0.5,
+    color = "black",
+    check_overlap = TRUE
+  ) +
+  scale_color_manual(values = c("Added" = "royalblue", "Removed" = "hotpink")) +
+  scale_size_continuous(range = c(2, 6), name = "Market Cap (B)") +
+  labs(
+    title = "S&P 500 Company Changes Over Time (Map View)",
+    subtitle = "Added (royalblue) vs Removed (hotpink)",
+    x = "Longitude",
+    y = "Latitude",
+    color = "Change Type"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 14)
+  ) +
+  # Animate points along the timeline
+  transition_time(date) +
+  ease_aes('linear')
+
+# Save the animation as an MP4 video
+animated_map_timeline <- animate(
+  map_timeline_plot,
+  nframes = 200,  # Increase frames for smoother animation
+  fps = 5,        # Slower playback for clarity
+  width = 1200,
+  height = 800,
+  renderer = av_renderer("sp500_timeline_map_demo.mp4") # Save as MP4
+)
+
+# Optionally, save the animation again
+anim_save("multimedia/sp500_timeline_map_demo.mp4", animation = animated_map_timeline)
+```
+
 
